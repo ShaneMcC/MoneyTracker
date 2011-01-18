@@ -33,18 +33,19 @@
 		private function getCode($first, $second, $third) {
 			$pass = str_split($this->secret);
 
-			$words['FIRST'] = 0;
-			$words['SECOND'] = 1;
-			$words['THIRD'] = 2;
-			$words['FOURTH'] = 3;
-			$words['FIFTH'] = 4;
-			$words['SIXTH'] = 5;
-			$words['SEVENTH'] = 6;
-			$words['EIGHTH'] = 7;
-			$words['NINTH'] = 8;
-			$words['TENTH'] = 9;
-			$words['NEXT TO LAST'] = count($pass) - 2;
-			$words['LAST'] = count($pass) - 1;
+			$words = array('FIRST' => 0,
+			               'SECOND' => 1,
+			               'THIRD' => 2,
+			               'FOURTH' => 3,
+			               'FIFTH' => 4,
+			               'SIXTH' => 5,
+			               'SEVENTH' => 6,
+			               'EIGHTH' => 7,
+			               'NINTH' => 8,
+			               'TENTH' => 9,
+			               'NEXT TO LAST' => count($pass) - 2,
+			               'LAST' => => count($pass) - 1,
+			);
 
 			return $pass[$words[$first]] . $pass[$words[$second]] . $pass[$words[$third]];
 		}
@@ -58,9 +59,9 @@
 			// Initial page, to get cookies
 			$this->browser = new SimpleBrowser();
 			$this->browser->setParser(new SimplePHPPageBuilder());
-			
+
 			$this->browser->get('https://www.hsbc.co.uk/');
-			
+
 			// Move to login page
 			$foo = $this->browser->submitFormById('loginpersonalform');
 
@@ -160,7 +161,7 @@
 
 			return trim($prefix . $balance[0]);
 		}
-		
+
 		/**
 		 * Get the sub-accounts of this login.
 		 * This will return cached account objects.
@@ -191,7 +192,7 @@
 			}
 
 			$this->accounts = array();
-			
+
 			$page = $this->getPage('https://www.hsbc.co.uk/1/2/personal/internet-banking?BlitzToken=blitz');
 
 			$page = $this->getDocument($page);
@@ -297,11 +298,11 @@
 		public function updateTransactions($account, $historical = false, $historicalVerbose = true) {
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
-			
+
 			$page = $this->getPage('https://www.hsbc.co.uk/1/2/personal/internet-banking/recent-transaction?ActiveAccountKey=' . $accountKey . '&BlitzToken=blitz');
 
 			$page = $this->getDocument($page);
-			
+
 			// Get the first bit of useful data.
 			$items = $page->find('table.extPibTable')->eq(0)->find('td');
 			$details = array();
@@ -355,7 +356,7 @@
 
 					// Abort once we run out of links.
 					if (count($links) == 0) { break; }
-					
+
 					// Open each statement.
 					foreach ($links as $link) {
 						$title = $link->getAttribute('title');
@@ -370,7 +371,7 @@
 						preg_match('#^([0-9]+ [a-zA-Z]+ ([0-9]+)) statement$#', $title, $matches);
 						$year = $matches[2];
 						$date = $matches[1];
-						
+
 						echo 'Statement: ', $title, "\n";
 
 						// Now get the transactions.
@@ -411,7 +412,7 @@
 									$transaction['description'] = $urls->eq(0);
 								}
 							}
-							
+
 							$transaction['description'] = $this->cleanElement($transaction['description']);
 
 							// Sanitise the above.
@@ -442,7 +443,6 @@
 						$page = $this->getDocument($page);
 					}
 				}
-				
 			}
 		}
 	}

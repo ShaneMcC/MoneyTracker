@@ -12,7 +12,7 @@
 		private $myLimits = '';
 		private $myMisc = '';
 		private $myTransactions = array();
-		
+
 		public function __construct($owner = '', $type = '', $sortcode = '', $accnumber = '', $balance = '', $available = '', $limits = '', $misc = '') {
 			if (!defined('CRLF')) { define('CRLF', "\r\n"); }
 			$this->myOwner = $owner;
@@ -25,19 +25,19 @@
 			$this->myMisc = $misc;
 			$this->myTime = time();
 		}
-		
+
 		function __toString() {
 			$string = '';
-			$string .= 'Owner: '.$this->myOwner.CRLF;
-			$string .= 'Type: '.$this->myType.CRLF;
-			$string .= 'Sort-Code: '.$this->mySortCode.CRLF;
-			$string .= 'Account Number: '.$this->myAccountNumber.CRLF;
-			$string .= 'Balance: '.$this->myBalance.CRLF;
-			$string .= 'Available: '.$this->myAvailable.CRLF;
-			$string .= 'Limits: '.$this->myLimits.CRLF;
+			$string .= 'Owner: ' . $this->myOwner . ;
+			$string .= 'Type: ' . $this->myType . "\n";
+			$string .= 'Sort-Code: ' . $this->mySortCode . "\n";
+			$string .= 'Account Number: ' . $this->myAccountNumber . "\n";
+			$string .= 'Balance: ' . $this->myBalance . "\n";
+			$string .= 'Available: ' . $this->myAvailable . "\n";
+			$string .= 'Limits: ' . $this->myLimits . "\n";
 			return $string;
 		}
-		
+
 		function getOwner() { return $this->myOwner; }
 		function getType() { return $this->myType; }
 		function getSortCode() { return $this->mySortCode; }
@@ -58,7 +58,7 @@
 		function setAvailable($newValue) { $this->myAvailable = $newValue; }
 		function setLimits($newValue) { $this->myLimits = $newValue; }
 		function setMisc($newValue) { $this->myMisc = $newValue;}
-		
+
 		function addTransaction($transaction) { $this->myTransactions[] = $transaction; }
 		function clearTransactions() { $this->myTransactions = array(); }
 	}
