@@ -28,13 +28,14 @@
 
 		function __toString() {
 			$string = '';
-			$string .= 'Owner: ' . $this->myOwner . ;
+			$string .= 'Owner: ' . $this->myOwner . "\n";
 			$string .= 'Type: ' . $this->myType . "\n";
 			$string .= 'Sort-Code: ' . $this->mySortCode . "\n";
 			$string .= 'Account Number: ' . $this->myAccountNumber . "\n";
 			$string .= 'Balance: ' . $this->myBalance . "\n";
 			$string .= 'Available: ' . $this->myAvailable . "\n";
 			$string .= 'Limits: ' . $this->myLimits . "\n";
+			$string .= 'Transaction Count: ' . count($this->myTransactions) . "\n";
 			return $string;
 		}
 

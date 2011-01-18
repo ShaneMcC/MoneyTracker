@@ -44,7 +44,7 @@
 			               'NINTH' => 8,
 			               'TENTH' => 9,
 			               'NEXT TO LAST' => count($pass) - 2,
-			               'LAST' => => count($pass) - 1,
+			               'LAST' => count($pass) - 1,
 			);
 
 			return $pass[$words[$first]] . $pass[$words[$second]] . $pass[$words[$third]];
@@ -170,9 +170,14 @@
 		 * @param $transactions (Default: false) Also update transactions?
 		 *                      (This will force a reload of the accounts only if
 		 *                       none of them have any associated transactions)
+		 * @param $historical (Default: false) Also try to get historical
+		 *                    transactions?
+		 * @param $historicalVerbose (Default: false) Should verbose data be
+		 *                           collected for historical, or is a single-line
+		 *                           description ok?
 		 * @return accounts associated with this login.
 		 */
-		public function getAccounts($useCached = true, $transactions = false) {
+		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false) {
 			// Check if we only want cached data.
 			if ($useCached) {
 				// Check if we have some accounts.
@@ -223,7 +228,7 @@
 				$account->setBalance($balance);
 
 				if ($transactions) {
-					$this->updateTransactions($account, true);
+					$this->updateTransactions($account, $historical, $historicalVerbose);
 				}
 
 				$this->accounts[] = $account;
