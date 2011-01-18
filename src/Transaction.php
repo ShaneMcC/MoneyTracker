@@ -7,7 +7,6 @@
 		private $myBalance;
 
 		public function __construct($time = '', $type = '', $description = '', $amount = '', $balance = '') {
-			if (!defined('CRLF')) { define('CRLF', "\r\n"); }
 			$this->myTime = $time;
 			$this->myType =  $type;
 			$this->myDescription = $description;
@@ -17,11 +16,11 @@
 
 		function __toString() {
 			$string = '';
-			$string .= 'Time: '.$this->myTime.CRLF;
-			$string .= 'Type: '.$this->myType.CRLF;
-			$string .= 'Description: '.$this->myDescription.CRLF;
-			$string .= 'Amount: '.$this->myAmount.CRLF;
-			$string .= 'Balance: '.$this->myBalance.CRLF;
+			$string .= 'Time: ' . $this->myTime. "\n";
+			$string .= 'Type: ' . $this->myType. "\n";
+			$string .= 'Description: ' . $this->myDescription. "\n";
+			$string .= 'Amount: ' . $this->myAmount. "\n";
+			$string .= 'Balance: ' . $this->myBalance . "\n";
 			return $string;
 		}
 
