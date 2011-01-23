@@ -322,7 +322,11 @@
 
 			if (isset($details['balance'])) {
 				$account->setBalance($this->parseBalance($details['balance']));
+			}
+			if (isset($details['overdraft limit'])) {
 				$account->setLimits('Overdraft: '.$this->parseBalance($details['overdraft limit']));
+			}
+			if (isset($details['available balance'])) {
 				$account->setAvailable($this->parseBalance($details['available balance']));
 			}
 
