@@ -30,6 +30,13 @@
 			$this->secret = $secret;
 		}
 
+		/**
+		 * String representation of this bank.
+		 */
+		public function __toString() {
+			return 'HSBC/' . $this->account;
+		}
+
 		private function getCode($first, $second, $third) {
 			$pass = str_split($this->secret);
 
@@ -134,6 +141,7 @@
 			$tidy = tidy_parse_string($html, $config);
 			$tidy->cleanRepair();
 			$html = $tidy->value;
+			file_put_contents('/tmp/tidyfakepage.html', $html);
 			return phpQuery::newDocument($html);
 		}
 
@@ -221,6 +229,7 @@
 
 				// Finally, create an account object.
 				$account = new Account();
+				$account->setSource($this->__toString());
 				$account->setType($type);
 				$account->setOwner($owner);
 				$account->setSortCode($number[0]);
@@ -235,6 +244,22 @@
 			}
 
 			return $this->accounts;
+		}
+
+		/**
+		 * Convert a pair of balance information into a float.
+		 *
+		 * @param $balance Balance as given.
+		 * @param $balanceType Balance Type as given.
+		 * @return float of balance.
+		 */
+		private function cleanBalance($balance, $balanceType) {
+			// Correct the balance.
+			$result = preg_replace('#[^0-9.]#', '', $balance);
+			if ($balanceType == 'D') {
+				$result = 0 - $result;
+			}
+			return $result;
 		}
 
 		/**
@@ -275,10 +300,7 @@
 			}
 
 			// Correct the balance.
-			$transaction['balance'] = preg_replace('#[^0-9.]#', '', $transaction['balance']);
-			if ($transaction['balance_type'] == 'D') {
-				$transaction['balance'] = 0 - $transaction['balance'];
-			}
+			$transaction['balance'] = $this->cleanBalance($transaction['balance'], $transaction['balance_type']);
 
 			$transaction['type'] = preg_replace('#[^A-Z0-9]#', '', $transaction['type']);
 
@@ -303,7 +325,6 @@
 		public function updateTransactions($account, $historical = false, $historicalVerbose = true) {
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
-
 			$page = $this->getPage('https://www.hsbc.co.uk/1/2/personal/internet-banking/recent-transaction?ActiveAccountKey=' . $accountKey . '&BlitzToken=blitz');
 
 			$page = $this->getDocument($page);
@@ -334,7 +355,7 @@
 			$items = $page->find('table.extPibTable tbody tr');
 			$transactions = array();
 			foreach ($items as $row) {
-				$columns = pq($row)->find('td');
+				$columns = pq($row, $page)->find('td');
 
 				// Pull out the data
 				$transaction['date'] = $this->cleanElement($columns->eq(0));
@@ -348,7 +369,37 @@
 				// Sanitise the above.
 				$transaction = $this->cleanTransaction($transaction);
 
-				$account->addTransaction(new Transaction($transaction['date'], $transaction['type'], $transaction['description'], $transaction['amount'], $transaction['balance']));
+				$transactions[] = $transaction;
+			}
+
+			// Now go through the transactions bottom-top so that we have them in the
+			// order that they occured.
+			$transactions = array_reverse($transactions);
+
+			// To make ordering the transactions easier, rather than having
+			// all the days transactions having the same time, we add a second
+			// each time. (so the first transaction of the day happened at
+			// 00:00:00 the second at 00:00:01 and so on.
+			$dayCount = 0;
+			$lastDate = 0;
+			$firstDate = 0;
+			foreach ($transactions as $transaction) {
+				// Skip the first day, cos we can't be sure we have all the
+				// transactions for it.
+				if ($transaction['date'] == $firstDate) { continue; }
+				
+				if ($lastDate == $transaction['date']) {
+					$transaction['date'] += $dayCount;
+					$dayCount++;
+				} else {
+					$lastDate = $transaction['date'];
+					$dayCount = 0;
+					if ($firstDate == 0) {
+						$firstDate = $transaction['date'];
+						continue;
+					}
+				}
+				$account->addTransaction(new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['description'], $transaction['amount'], $transaction['balance']));
 			}
 
 			// Now try the historical ones.
@@ -357,6 +408,11 @@
 				$page = $this->getPage('https://www.hsbc.co.uk/1/2/personal/internet-banking/previous-statements');
 				$page = $this->getDocument($page);
 				$nextLink = '';
+
+				// How much balance was brought forward in the last statement
+				$lastForward = 0.00;
+				// How much balance was brought forward in this statement
+				$thisForward = 0.00;
 
 				// Keep going until we can't go any more.
 				while (true) {
@@ -374,38 +430,56 @@
 						// Bloody HTML Tidy...
 						$url = str_replace('&amp;', '&', $url);
 						$rpage = $this->getPage($url);
-
+						file_put_contents('/tmp/fakepage.html', $rpage);
 						$rpage = $this->getDocument($rpage);
 
 						preg_match('#^([0-9]+ [a-zA-Z]+ ([0-9]+)) statement$#', $title, $matches);
 						$year = $matches[2];
 						$date = $matches[1];
-
 						echo 'Statement: ', $title, "\n";
 
 						// Now get the transactions.
 						$items = $rpage->find('table tbody tr');
-						$transactions = array();
+						// The last balance we calculated
+						$lastBalance = 0.00;
+						// The last balance we were given
+						$lastGivenBalance = 0.00;
+						// How much money have we calculated between the last balance and now?
+						$thisDay = 0.00;
+						// is this the first given balance of the statement?
+						$firstBalance = true;
+						// To make ordering the transactions easier, rather than having
+						// all the days transactions having the same time, we add a second
+						// each time. (so the first transaction of the day happened at
+						// 00:00:00 the second at 00:00:01 and so on.
+						$dayCount = 0;
+						$lastDate = 0;
 						foreach ($items as $row) {
-							echo 'Got Item.', "\n";
-							$columns = pq($row)->find('td');
+							echo 'Got Item', "\n";
+							$columns = pq($row, $items)->find('td');
 
 							// Pull out the data
 							$transaction = array();
 							$transaction['date'] = $this->cleanElement($columns->eq(0)->find('p'));
 							$transaction['type'] = $this->cleanElement($columns->eq(1)->find('p'));
-							$transaction['description'] = $columns->eq(2)->find('p');
+							$fullDesc = $columns->eq(2)->find('p');
+							$transaction['description'] = $this->cleanElement($fullDesc);
 							$transaction['out'] = $this->cleanElement($columns->eq(3)->find('p'));
 							$transaction['in'] = $this->cleanElement($columns->eq(4)->find('p'));
 							$transaction['balance'] = $this->cleanElement($columns->eq(5)->find('p'));
 							$transaction['balance_type'] = $this->cleanElement($columns->eq(6)->find('p'));
 
-							if (preg_match('#<strong>Balance (carried|brought) forward</strong>#', $transaction['description'])) {
+							if (preg_match('#<strong>(Balance (carried|brought) forward)</strong>#', $transaction['description'], $m)) {
+								$lastBalance = $lastGivenBalance = $this->cleanBalance($transaction['balance'], $transaction['balance_type']);
+								if ($m[1] == 'Balance brought forward') {
+									$lastForward = $thisForward;
+									$thisForward = $lastGivenBalance;
+								}
 								continue;
 							}
 
 							// Does the description have a URL?
-							$urls = pq($transaction['description'])->find('a');
+							$urls = pq($fullDesc, $columns)->find('a');
 							if (count($urls) > 0) {
 								// Open the URL to get the full description if desired
 								if ($historicalVerbose) {
@@ -415,20 +489,63 @@
 									$url = str_replace('&amp;', '&', $url);
 									$dpage = $this->getPage($url);
 									$dpage = $this->getDocument($dpage);
-									$transaction['description'] = $dpage->find('table tbody tr')->eq(5)->find('td')->eq(1)->find('p');
+									$transaction['description'] = $this->cleanElement($dpage->find('table tbody tr')->eq(5)->find('td')->eq(1)->find('p'));
 								} else {
 									// Otherwise, the first line will do.
-									$transaction['description'] = $urls->eq(0);
+									$transaction['description'] = $this->cleanElement($urls->eq(0));
 								}
 							}
-
-							$transaction['description'] = $this->cleanElement($transaction['description']);
 
 							// Sanitise the above.
 							$transaction = $this->cleanTransaction($transaction, $year, $date);
 
+							$thisDay += $transaction['amount'];
+
+							// HSBC only gives a final balance for each day, not a separate
+							// one for each transaction.
+							// Lets fix that.
+							if ($transaction['balance'] == '') {
+								$lastBalance += $transaction['amount'];
+								$transaction['balance'] = $lastBalance;
+							} else {
+								$given = $transaction['balance'];
+								$calculated = sprintf('%0.2f', ($lastBalance + $transaction['amount']));
+
+								if ($given != $calculated) {
+									// HSBC has a horrible bug with the first ever statement.
+									// - The starting balance will show the same as the previous
+									//   statement starting balance.
+									// - We can check if we are running into this bug by checking
+									//   if the 2 starting balances match, and the given balance
+									//   we are getting now is the same as the total for the day.
+									//
+									// So try to work around this bug first before aborting.
+									if (!$firstBalance || $transaction['balance'] != $thisDay || $thisForward != $lastForward) {
+										echo 'ERROR WITH CALCULATED BALANCES:', "\n";
+										echo '    Expected: ', $transaction['balance'], "\n";
+										echo '    Calculated: ', ($lastBalance + $transaction['amount']), "\n";
+										echo "\n";
+										var_dump($transaction);
+										echo "\n";
+										die();
+									}
+								}
+								$lastBalance = $lastGivenBalance = $given;
+								$thisDay = 0.00;
+								$firstBalance = false;
+							}
+
+							// Update the time of the transaction.
+							if ($lastDate == $transaction['date']) {
+								$transaction['date'] += $dayCount;
+								$dayCount++;
+							} else {
+								$lastDate = $transaction['date'];
+								$dayCount = 0;
+							}
+
 							if ($transaction['type'] != '') {
-								$account->addTransaction(new Transaction($transaction['date'], $transaction['type'], $transaction['description'], $transaction['amount'], $transaction['balance']));
+								$account->addTransaction(new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['description'], $transaction['amount'], $transaction['balance']));
 							}
 						}
 					}

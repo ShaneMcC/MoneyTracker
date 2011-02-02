@@ -1,2 +1,2 @@
-src/test.php
-src/*testdata.txt
+test/data/*
+test/test.php
