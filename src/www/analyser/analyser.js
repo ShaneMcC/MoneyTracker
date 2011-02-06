@@ -1,0 +1,1 @@
+../../3rdparty/MoneyAnalyser/analyser.js

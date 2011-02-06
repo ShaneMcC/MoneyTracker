@@ -152,7 +152,7 @@
 		 */
 		private function cleanElement($element) {
 			// Fail.
-			return trim(preg_replace('#[^\s\w\d-._/\\\'*()<>{}\[\]]#i', '', $element->html()));
+			return trim(preg_replace('#[^\s\w\d-._/\\\'*()<>{}\[\]@&;!"%^]#i', '', $element->html()));
 		}
 
 		/**

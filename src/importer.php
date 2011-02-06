@@ -1,4 +1,5 @@
 <?php
+	require_once(dirname(__FILE__) . '/functions.php');
 	require_once(dirname(__FILE__) . '/Bank.php');
 	require_once(dirname(__FILE__) . '/Account.php');
 	require_once(dirname(__FILE__) . '/Transaction.php');
@@ -17,12 +18,9 @@
 		private $db = null;
 		private $pdo = null;
 
-		public function __construct($server = 'localhost', $user = 'bankinfo', $pass = 'bankinfo', $db = 'bankinfo', $port = '3306') {
-			$this->pdo = new PDO('mysql:host=' . $server . ';port=' . $port . ';dbname=' . $db, $user, $pass);
+		public function __construct($dbdata) {
+			$this->pdo = getPDO($dbdata);
 			$this->db = new NotORM($this->pdo);
-
-			$this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
-			$this->db->debug = true;
 		}
 
 		public function import($bank) {

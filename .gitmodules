@@ -7,3 +7,6 @@
 [submodule "src/3rdparty/simpletest"]
 	path = src/3rdparty/simpletest
 	url = git://github.com/ShaneMcC/SimpleTest.git
+[submodule "src/3rdparty/MoneyAnalyser"]
+	path = src/3rdparty/MoneyAnalyser
+	url = git://github.com/csmith/MoneyAnalyser.git

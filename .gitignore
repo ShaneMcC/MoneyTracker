@@ -1,2 +1,4 @@
 test/data/*
 test/test.php
+src/config.user.php
+src/www/analyser/data.rules.php
