@@ -5,6 +5,7 @@
 	require_once(dirname(__FILE__) . '/Account.php');
 	require_once(dirname(__FILE__) . '/Transaction.php');
 	require_once(dirname(__FILE__) . '/banks/HSBC.php');
+	require_once(dirname(__FILE__) . '/banks/Halifax.php');
 
 	// Database info
 	$config['database']['type'] = 'mysql';

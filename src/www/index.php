@@ -22,7 +22,7 @@
 		foreach ($account->getTransactions() as $transaction) {
 			echo '<tr>';
 			echo '<td>', date("Y-m-d H:i:s", $transaction->getTime()), '</td>';
-			echo '<td>', $transaction->getType(), '</td>';
+			echo '<td> <attr title="', $transaction->getType(), '">', $transaction->getTypeCode(), '</attr></td>';
 			echo '<td>', $transaction->getDescription(), '</td>';
 			echo '<td>', money_format('%.2n', $transaction->getAmount()), '</td>';
 			echo '<td>', money_format('%.2n', $transaction->getBalance()), '</td>';

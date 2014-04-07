@@ -58,7 +58,8 @@ DROP TABLE IF EXISTS `transactions`;
 CREATE TABLE `transactions` (
   `hash` varchar(100) NOT NULL,
   `time` int(11) NOT NULL,
-  `changetype` varchar(50) NOT NULL,
+  `changetype` varchar(50) NOT NULL DEFAULT '',
+  `typecode` VARCHAR(40) NOT NULL,
   `description` varchar(512) NOT NULL DEFAULT '',
   `amount` double(10,2) NOT NULL,
   `balance` double(10,2) NOT NULL,

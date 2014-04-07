@@ -9,11 +9,10 @@
 	/**
 	 * Code to scrape HSBC to get Account and Transaction objects.
 	 */
-	class HSBC extends Bank {
+	class HSBC extends WebBank {
 		private $account = '';
 		private $securekey = '';
 		private $secretword = '';
-		private $browser = null;
 
 		private $accounts = null;
 
@@ -55,7 +54,7 @@
 			} else {
 				$this->newBrowser(true);
 				$page = $this->browser->get('https://www.hsbc.co.uk/1/2/personal/internet-banking?BlitzToken=blitz');
-				if (strpos($page, 'View My accounts') !== FALSE) {
+				if ($this->isLoggedIn($page)) {
 					return true;
 				}
 			}
@@ -83,115 +82,11 @@
 
 			// And done.
 			$this->saveCookies();
+			return $this->isLoggedIn($page);
+		}
+
+		public function isLoggedIn($page) {
 			return (strpos($page, 'View My accounts') !== FALSE);
-		}
-
-		/**
-		 * Create a new Browser Object.
-		 */
-		private function newBrowser($loadCookies = true) {
-			$this->browser = new SimpleBrowser();
-			$this->browser->setParser(new SimplePHPPageBuilder());
-			$this->browser->setUserAgent('Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:28.0) Gecko/20100101 Firefox/28.0');
-			if ($loadCookies) {
-				$this->loadCookies();
-			}
-		}
-
-		private function saveCookies() {
-			$_SimpleBrowser = new ReflectionClass("SimpleBrowser");
-			$_SimpleBrowser_user_agent = $_SimpleBrowser->getProperty("user_agent");
-			$_SimpleBrowser_user_agent->setAccessible(true);
-
-			$_SimpleUserAgent = new ReflectionClass("SimpleUserAgent");
-			$_SimpleUserAgent_cookie_jar = $_SimpleUserAgent->getProperty("cookie_jar");
-			$_SimpleUserAgent_cookie_jar->setAccessible(true);
-
-			$useragent = $_SimpleBrowser_user_agent->getValue($this->browser);
-			$cookie_jar = $_SimpleUserAgent_cookie_jar->getValue($useragent);
-
-			file_put_contents(dirname(__FILE__) . '/.cookies-' . $this->account, serialize($cookie_jar));
-		}
-
-		private function loadCookies() {
-			if (!file_exists(dirname(__FILE__) . '/.cookies-' . $this->account)) { return; }
-			$_SimpleBrowser = new ReflectionClass("SimpleBrowser");
-			$_SimpleBrowser_user_agent = $_SimpleBrowser->getProperty("user_agent");
-			$_SimpleBrowser_user_agent->setAccessible(true);
-
-			$_SimpleUserAgent = new ReflectionClass("SimpleUserAgent");
-			$_SimpleUserAgent_cookie_jar = $_SimpleUserAgent->getProperty("cookie_jar");
-			$_SimpleUserAgent_cookie_jar->setAccessible(true);
-
-			$useragent = $_SimpleBrowser_user_agent->getValue($this->browser);
-			$new_cookie_jar = unserialize(file_get_contents(dirname(__FILE__) . '/.cookies-' . $this->account));
-			$_SimpleUserAgent_cookie_jar->setValue($useragent, $new_cookie_jar);
-		}
-
-		/**
-		 * Get the requested page, logging in if needed.
-		 *
-		 * @param $url URL of page to get.
-		 * @param $justGet (Default: false) Just get the page, don't try to auth.
-		 */
-		private function getPage($url, $justGet = false) {
-			if ($this->browser == null) {
-				if ($justGet) {
-					$this->newBrowser();
-				} else {
-					$this->login();
-				}
-			}
-
-			$page = $this->browser->get($url);
-			if (!$justGet && (strpos($page, 'View My accounts') === FALSE)) {
-				$this->login();
-				$page = $this->browser->get($url);
-			}
-			file_put_contents('/tmp/fakepage.html', $page);
-			return $page;
-		}
-
-		/**
-		 * Get a nice tidied and phpQueryed version of a html page.
-		 *
-		 * @param $html HTML to parse
-		 * @return PHPQuery document from the tidied html.
-		 */
-		private function getDocument($html) {
-			$config = array('indent' => TRUE,
-			                'wrap' => 0,
-			                'output-xhtml' => true,
-			                'clean' => true,
-			                'numeric-entities' => true,
-			                'char-encoding' => 'ascii',
-			                'input-encoding' => 'ascii',
-			                );
-			$tidy = tidy_parse_string($html, $config);
-			$tidy->cleanRepair();
-			$html = $tidy->value;
-			file_put_contents('/tmp/tidyfakepage.html', $html);
-			return phpQuery::newDocument($html);
-		}
-
-		/**
-		 * Clean up an element.
-		 *
-		 * @return a clean element as a string.
-		 */
-		private function cleanElement($element) {
-			$out = $element->html();
-
-			// Decode entities.
-			// Handle the silly space first.
-			$out = str_replace('&#160;', ' ', $out);
-			// Now the rest.
-			$out = trim(html_entity_decode($out));
-
-			// I don't remember why I did this, so for now I'll leave it out.
-			// $out = trim(preg_replace('#[^\s\w\d-._/\\\'*()<>{}\[\]@&;!"%^]#i', '', $element->html()));
-
-			return $out;
 		}
 
 		/**
@@ -246,6 +141,8 @@
 			$this->accounts = array();
 
 			$page = $this->getPage('https://www.hsbc.co.uk/1/2/personal/internet-banking?BlitzToken=blitz');
+
+			if (!$this->isLoggedIn($page)) { return $this->accounts; }
 
 			$page = $this->getDocument($page);
 
@@ -361,6 +258,24 @@
 			return $transaction;
 		}
 
+		private function getType($typecode) {
+			$typecodes[')))'] = 'Contactless debit card payment';
+			$typecodes['ATM'] = 'Cash machine';
+			$typecodes['BP'] = 'Bill payment';
+			$typecodes['CHQ'] = 'Cheque';
+			$typecodes['CR'] = 'Credit';
+			$typecodes['DD'] = 'Direct Debit or other BACS debit';
+			$typecodes['DIV'] = 'Dividend';
+			$typecodes['DR'] = 'Debit';
+			$typecodes['SO'] = 'Standing order';
+			$typecodes['TFR'] = 'Internal Transfer';
+			$typecodes['VIS'] = 'Visa Card Payment';
+			$typecodes['SOL'] = 'Solo Card Payment';
+			$typecodes['MAE'] = 'Maestro Card Payment';
+
+			return isset($typecodes[$typecode]) ? $typecodes[$typecode] : $typecode;
+		}
+
 		/**
 		 * Update the transactions on the given account object.
 		 *
@@ -375,7 +290,7 @@
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
 			$page = $this->getPage('https://www.hsbc.co.uk/1/2/personal/internet-banking/recent-transaction?ActiveAccountKey=' . $accountKey . '&BlitzToken=blitz');
-
+			if (!$this->isLoggedIn($page)) { return false; }
 			$page = $this->getDocument($page);
 
 			// Get the first bit of useful data.
@@ -408,7 +323,9 @@
 
 				// Pull out the data
 				$transaction['date'] = $this->cleanElement($columns->eq(0));
-				$transaction['type'] = $this->cleanElement($columns->eq(1));
+				$transaction['typecode'] = $this->cleanElement($columns->eq(1));
+				$transaction['type'] = $this->getType($transaction['typecode']);
+
 				$transaction['description'] = $this->cleanElement($columns->eq(2));
 				$transaction['out'] = $this->cleanElement($columns->eq(3));
 				$transaction['in'] = $this->cleanElement($columns->eq(4));
@@ -449,7 +366,7 @@
 						$lastDate = $transaction['date'];
 						$dayCount = 0;
 					}
-					$account->addTransaction(new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['description'], $transaction['amount'], $transaction['balance']));
+					$account->addTransaction(new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['typecode'], $transaction['description'], $transaction['amount'], $transaction['balance']));
 				}
 			}
 

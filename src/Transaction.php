@@ -2,6 +2,7 @@
 	class Transaction {
 		private $myTime;
 		private $myType;
+		private $myTypeCode;
 		private $myDescription;
 		private $myAmount;
 		private $myBalance;
@@ -9,9 +10,10 @@
 		private $mySource;
 		private $myAccountKey;
 
-		public function __construct($source = '', $accountKey = '', $time = '', $type = '', $description = '', $amount = '', $balance = '', $extra = '') {
+		public function __construct($source = '', $accountKey = '', $time = '', $type = '', $typecode = '', $description = '', $amount = '', $balance = '', $extra = '') {
 			$this->myTime = $time;
 			$this->myType =  $type;
+			$this->myTypeCode =  $typecode;
 			$this->myDescription = $description;
 			$this->myAmount = $amount;
 			$this->myBalance = $balance;
@@ -25,7 +27,7 @@
 			$string .= 'Time: ' . $this->myTime. "\n";
 			$string .= 'Account Key: ' . $this->myAccountKey . "\n";
 			$string .= 'Source: ' . $this->mySource . "\n";
-			$string .= 'Type: ' . $this->myType. "\n";
+			$string .= 'Type: ' . $this->myType . ' (' . $this->myTypeCode . ')'. "\n";
 			$string .= 'Description: ' . $this->myDescription. "\n";
 			$string .= 'Amount: ' . $this->myAmount. "\n";
 			$string .= 'Balance: ' . $this->myBalance . "\n";
@@ -37,6 +39,7 @@
 			             'time' => $this->myTime,
 			             'accountkey' => $this->myAccountKey,
 			             'changetype' => $this->myType,
+			             'typecode' => $this->myTypeCode,
 			             'description' => $this->myDescription,
 			             'amount' => $this->myAmount,
 			             'balance' => $this->myBalance,
@@ -49,6 +52,7 @@
 			$obj->myTime = $array['time'];
 			$obj->myAccountKey = $array['accountkey'];
 			$obj->myType = $array['changetype'];
+			$obj->myTypeCode = $array['typecode'];
 			$obj->myDescription = $array['description'];
 			$obj->myAmount = $array['amount'];
 			$obj->myBalance = $array['balance'];
@@ -60,6 +64,7 @@
 
 		function getTime() { return $this->myTime; }
 		function getType() { return $this->myType; }
+		function getTypeCode() { return $this->myTypeCode; }
 		function getAccountKey() { return $this->myAccountKey; }
 		function getDescription() { return $this->myDescription; }
 		function getAmount() { return $this->myAmount; }
@@ -80,7 +85,7 @@
 			return sprintf('%s-%u-%u-%s-%s-%s', $this->getAccountKey(),
 			                                 $this->getTime(),
 			                                 crc32($this->getDescription()),
-			                                 $this->getType(),
+			                                 $this->getTypeCode(),
 			                                 str_replace('-', 'N', $this->getAmount()),
 			                                 str_replace('-', 'N', $this->getBalance())
 			                                 );
