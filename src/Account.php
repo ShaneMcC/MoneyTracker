@@ -1,5 +1,5 @@
 <?php
-	include('Transaction.php');
+	require_once(dirname(__FILE__) . '/Transaction.php');
 
 	class Account {
 		private $myOwner = '';
@@ -17,7 +17,6 @@
 		private $myTransactions = array();
 
 		public function __construct($source = '', $owner = '', $type = '', $sortcode = '', $accnumber = '', $balance = '', $available = '', $limits = '', $misc = '', $desc = '', $extra = '') {
-			if (!defined('CRLF')) { define('CRLF', "\r\n"); }
 			$this->myOwner = $owner;
 			$this->myType = $type;
 			$this->mySortCode = $sortcode;
@@ -62,6 +61,23 @@
 			             'source' => $this->mySource);
 		}
 
+		static function fromArray($array) {
+			$obj = new Account();
+			$obj->mySortCode = $array['sortcode'];
+			$obj->myAccountNumber = $array['accountnumber'];
+			$obj->myType = $array['type'];
+			$obj->myDescription = $array['description'];
+			$obj->myOwner = $array['owner'];
+			$obj->myBalance = $array['lastbalance'];
+			$obj->myLimits = $array['limits'];
+			$obj->myAvailable = $array['available'];
+			$obj->myMisc = $array['misc'];
+			$obj->myExtra = $array['extra'];
+			$obj->mySource = $array['source'];
+
+			return $obj;
+		}
+
 		function getOwner() { return $this->myOwner; }
 		function getType() { return $this->myType; }
 		function getSortCode() { return $this->mySortCode; }
@@ -91,6 +107,18 @@
 
 		function addTransaction($transaction) { $this->myTransactions[] = $transaction; }
 		function clearTransactions() { $this->myTransactions = array(); }
+		function setTransactions($transactions) { $this->myTransactions = $transactions; }
+
+		function sortTransactions($oldestFirst = true) {
+			usort($this->myTransactions, function ($a, $b) use ($oldestFirst) {
+				if ($a->getTime() == $b->getTime()) { return 0; }
+				if ($oldestFirst) {
+					return ($a->getTime() < $b->getTime()) ? -1 : 1;
+				} else {
+					return ($b->getTime() < $a->getTime()) ? -1 : 1;
+				}
+			});
+		}
 
 		function getAccountKey() { return preg_replace('#[^0-9]#', '', $this->getSortCode() . $this->getAccountNumber()); }
 	}

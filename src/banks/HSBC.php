@@ -11,8 +11,8 @@
 	 */
 	class HSBC extends Bank {
 		private $account = '';
-		private $secret = '';
-		private $dob = '';
+		private $securekey = '';
+		private $secretword = '';
 		private $browser = null;
 
 		private $accounts = null;
@@ -21,13 +21,13 @@
 		 * Create a HSBC.
 		 *
 		 * @param $account Account number (IB...)
-		 * @param $dob Date of bith (DDMMYY)
-		 * @param $secret 6-10 digit secret code
+		 * @param $secretword Secret Word
+		 * @param $securekey Secure Key Code
 		 */
-		public function __construct($account, $dob, $secret) {
+		public function __construct($account, $secretword, $securekey) {
 			$this->account = $account;
-			$this->dob = $dob;
-			$this->secret = $secret;
+			$this->secretword = $secretword;
+			$this->securekey = $securekey;
 		}
 
 		/**
@@ -37,66 +37,95 @@
 			return 'HSBC/' . $this->account;
 		}
 
-		private function getCode($first, $second, $third) {
-			$pass = str_split($this->secret);
-
-			$words = array('FIRST' => 0,
-			               'SECOND' => 1,
-			               'THIRD' => 2,
-			               'FOURTH' => 3,
-			               'FIFTH' => 4,
-			               'SIXTH' => 5,
-			               'SEVENTH' => 6,
-			               'EIGHTH' => 7,
-			               'NINTH' => 8,
-			               'TENTH' => 9,
-			               'NEXT TO LAST' => count($pass) - 2,
-			               'LAST' => count($pass) - 1,
-			);
-
-			return $pass[$words[$first]] . $pass[$words[$second]] . $pass[$words[$third]];
-		}
-
 		/**
 		 * Force a fresh login.
 		 *
 		 * @return true if login was successful, else false.
 		 */
-		public function login() {
-			// Initial page, to get cookies
-			$this->browser = new SimpleBrowser();
-			$this->browser->setParser(new SimplePHPPageBuilder());
+		public function login($fresh = false) {
+			if ($fresh) {
+				$this->newBrowser(false);
+				$page = $this->browser->get('https://www.hsbc.co.uk/');
+				$page = $this->getDocument($page);
 
-			$this->browser->get('https://www.hsbc.co.uk/');
-
-			// Move to login page
-			$foo = $this->browser->submitFormById('loginpersonalform');
+				// Move to login page
+				$element = $page->find('a[title="Log on to Personal Internet Banking"');
+				$loginurl = $element->eq(0)->attr('href');
+				$page = $this->browser->get('https://www.hsbc.co.uk/' . $loginurl);
+			} else {
+				$this->newBrowser(true);
+				$page = $this->browser->get('https://www.hsbc.co.uk/1/2/personal/internet-banking?BlitzToken=blitz');
+				if (strpos($page, 'View My accounts') !== FALSE) {
+					return true;
+				}
+			}
 
 			// Fill out the form and submit it.
 			$this->browser->setFieldById('intbankingID', $this->account);
-			$page = $this->browser->submitFormById('IBloginForm');
+			// $this->browser->setMaximumRedirects(1);
+			$page = $this->browser->submitFormById('logonForm');
 
-			// Now fill out the next page form.
-			// This needs some regexing to get what we want, firstly the requested
-			// bits of the code
-			if (preg_match_all('@<span class="hsbcTextHighlight">&#160;<strong>([^<]+)</strong></span>&nbsp;@', $page, $matches)) {
-				// Get the code and the dob
-				$code = $this->getCode(trim($matches[1][0]), trim($matches[1][1]), trim($matches[1][2]));
-				$dob = $this->dob;
-
-				// Set the fields
-				$this->browser->setFieldByName('memorableAnswer', $dob);
-				$this->browser->setFieldByName('password', $code);
-
-				$page = $this->browser->clickSubmit('Continue');
-
-				// And now, "click to continue" (why ?!)
-				$page = $this->browser->get('https://www.hsbc.co.uk/1/2/personal/internet-banking?BlitzToken=blitz');
-
-				// And done.
-				return (strpos($page, 'You are logged on') !== FALSE);
+			if ($this->securekey == '##') {
+				$this->securekey = getUserInput('Please enter the securekey code for '.$this->account.': ');
+				if ($this->securekey === false) {
+					return false;
+				}
 			}
-			return false;
+
+			// Set the fields
+			$this->browser->setFieldById('passwd', $this->secretword);
+			$this->browser->setFieldById('secNumberInput', $this->securekey);
+
+			$page = $this->browser->clickSubmit('Continue');
+
+			// And now, "click to continue" (why ?!)
+			$page = $this->browser->get('https://www.hsbc.co.uk/1/2/personal/internet-banking?BlitzToken=blitz');
+
+			// And done.
+			$this->saveCookies();
+			return (strpos($page, 'View My accounts') !== FALSE);
+		}
+
+		/**
+		 * Create a new Browser Object.
+		 */
+		private function newBrowser($loadCookies = true) {
+			$this->browser = new SimpleBrowser();
+			$this->browser->setParser(new SimplePHPPageBuilder());
+			$this->browser->setUserAgent('Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:28.0) Gecko/20100101 Firefox/28.0');
+			if ($loadCookies) {
+				$this->loadCookies();
+			}
+		}
+
+		private function saveCookies() {
+			$_SimpleBrowser = new ReflectionClass("SimpleBrowser");
+			$_SimpleBrowser_user_agent = $_SimpleBrowser->getProperty("user_agent");
+			$_SimpleBrowser_user_agent->setAccessible(true);
+
+			$_SimpleUserAgent = new ReflectionClass("SimpleUserAgent");
+			$_SimpleUserAgent_cookie_jar = $_SimpleUserAgent->getProperty("cookie_jar");
+			$_SimpleUserAgent_cookie_jar->setAccessible(true);
+
+			$useragent = $_SimpleBrowser_user_agent->getValue($this->browser);
+			$cookie_jar = $_SimpleUserAgent_cookie_jar->getValue($useragent);
+
+			file_put_contents(dirname(__FILE__) . '/.cookies-' . $this->account, serialize($cookie_jar));
+		}
+
+		private function loadCookies() {
+			if (!file_exists(dirname(__FILE__) . '/.cookies-' . $this->account)) { return; }
+			$_SimpleBrowser = new ReflectionClass("SimpleBrowser");
+			$_SimpleBrowser_user_agent = $_SimpleBrowser->getProperty("user_agent");
+			$_SimpleBrowser_user_agent->setAccessible(true);
+
+			$_SimpleUserAgent = new ReflectionClass("SimpleUserAgent");
+			$_SimpleUserAgent_cookie_jar = $_SimpleUserAgent->getProperty("cookie_jar");
+			$_SimpleUserAgent_cookie_jar->setAccessible(true);
+
+			$useragent = $_SimpleBrowser_user_agent->getValue($this->browser);
+			$new_cookie_jar = unserialize(file_get_contents(dirname(__FILE__) . '/.cookies-' . $this->account));
+			$_SimpleUserAgent_cookie_jar->setValue($useragent, $new_cookie_jar);
 		}
 
 		/**
@@ -108,18 +137,18 @@
 		private function getPage($url, $justGet = false) {
 			if ($this->browser == null) {
 				if ($justGet) {
-					$this->browser = new SimpleBrowser();
-					$this->browser->setParser(new SimplePHPPageBuilder());
+					$this->newBrowser();
 				} else {
 					$this->login();
 				}
 			}
 
 			$page = $this->browser->get($url);
-			if (!$justGet && (strpos($page, 'You are logged on') === FALSE)) {
+			if (!$justGet && (strpos($page, 'View My accounts') === FALSE)) {
 				$this->login();
 				$page = $this->browser->get($url);
 			}
+			file_put_contents('/tmp/fakepage.html', $page);
 			return $page;
 		}
 
@@ -151,30 +180,40 @@
 		 * @return a clean element as a string.
 		 */
 		private function cleanElement($element) {
-			// Fail.
-			return trim(preg_replace('#[^\s\w\d-._/\\\'*()<>{}\[\]@&;!"%^]#i', '', $element->html()));
+			$out = $element->html();
+
+			// Decode entities.
+			// Handle the silly space first.
+			$out = str_replace('&#160;', ' ', $out);
+			// Now the rest.
+			$out = trim(html_entity_decode($out));
+
+			// I don't remember why I did this, so for now I'll leave it out.
+			// $out = trim(preg_replace('#[^\s\w\d-._/\\\'*()<>{}\[\]@&;!"%^]#i', '', $element->html()));
+
+			return $out;
 		}
 
 		/**
 		 * Take a Balance as exported by HSBC, and return it as a standard balance.
 		 *
-		 * @param $balance Balance input (eg: " £ 1.00 D ")
+		 * @param $balance Balance input (eg: " £ 1.00 D " or " &163; 1.00 D ")
 		 * @return Correct balance (eg: "-1.00")
 		 */
 		private function parseBalance($balance) {
 			// Check for negative
 			$prefix = '';
 			if (strpos($balance, 'D') !== false) { $prefix = '-' . $prefix; }
-			$balance = explode(' ', $balance);
+			$balance = explode(' ', trim($balance));
 
-			return trim($prefix . $balance[0]);
+			return trim($prefix . $balance[1]);
 		}
 
 		/**
 		 * Get the sub-accounts of this login.
 		 * This will return cached account objects.
 		 *
-		 * @param $useCached (Default: true) Return cached values if possib;e?
+		 * @param $useCached (Default: true) Return cached values if possible?
 		 * @param $transactions (Default: false) Also update transactions?
 		 *                      (This will force a reload of the accounts only if
 		 *                       none of them have any associated transactions)
@@ -232,8 +271,13 @@
 				$account->setSource($this->__toString());
 				$account->setType($type);
 				$account->setOwner($owner);
-				$account->setSortCode($number[0]);
-				$account->setAccountNumber($number[1]);
+				if (!isset($number[1])) {
+					$account->setSortCode('');
+					$account->setAccountNumber($number[0]);
+				} else {
+					$account->setSortCode($number[0]);
+					$account->setAccountNumber($number[1]);
+				}
 				$account->setBalance($balance);
 
 				if ($transactions) {
@@ -287,10 +331,15 @@
 
 			// Descriptions can be multiline, put them on one nicely.
 			$transaction['description'] = str_replace('<br />', ' // ', $transaction['description']);
+			$transaction['description'] = str_replace('<br>', ' // ', $transaction['description']);
 			$transaction['description'] = preg_replace('#[\n\s]+#ims', ' ', $transaction['description']);
 			$transaction['description'] = html_entity_decode($transaction['description']);
 			$transaction['description'] = preg_replace('#//[\s]+$#', '', $transaction['description']);
 			$transaction['description'] = trim($transaction['description']);
+
+			// Some transactions are bold.
+			$transaction['out'] = trim(str_replace('<b>', '', str_replace('</b>', '', $transaction['out'])));
+			$transaction['in'] = trim(str_replace('<b>', '', str_replace('</b>', '', $transaction['in'])));
 
 			// Rather than separate in/out, lets just have a +/- amount
 			if (!empty($transaction['out'])) {
@@ -302,7 +351,7 @@
 			// Correct the balance.
 			$transaction['balance'] = $this->cleanBalance($transaction['balance'], $transaction['balance_type']);
 
-			$transaction['type'] = preg_replace('#[^A-Z0-9]#', '', $transaction['type']);
+			$transaction['type'] = preg_replace('#[^A-Z0-9)]#', '', $transaction['type']);
 
 			// Unset any unneeded values
 			unset($transaction['out']);
@@ -363,8 +412,10 @@
 				$transaction['description'] = $this->cleanElement($columns->eq(2));
 				$transaction['out'] = $this->cleanElement($columns->eq(3));
 				$transaction['in'] = $this->cleanElement($columns->eq(4));
-				$transaction['balance'] = $this->cleanElement($columns->eq(5));
-				$transaction['balance_type'] = $this->cleanElement($columns->eq(6));
+
+				$bal = explode(' ', $this->cleanElement($columns->eq(5)));
+				$transaction['balance'] = $bal[0];
+				$transaction['balance_type'] = (isset($bal[1]) ? $bal[1] : '');
 
 				// Sanitise the above.
 				$transaction = $this->cleanTransaction($transaction);
@@ -382,24 +433,24 @@
 			// 00:00:00 the second at 00:00:01 and so on.
 			$dayCount = 0;
 			$lastDate = 0;
-			$firstDate = 0;
-			foreach ($transactions as $transaction) {
-				// Skip the first day, cos we can't be sure we have all the
-				// transactions for it.
-				if ($transaction['date'] == $firstDate) { continue; }
-				
-				if ($lastDate == $transaction['date']) {
-					$transaction['date'] += $dayCount;
-					$dayCount++;
-				} else {
-					$lastDate = $transaction['date'];
-					$dayCount = 0;
-					if ($firstDate == 0) {
-						$firstDate = $transaction['date'];
-						continue;
+
+			// Ignore transactions on the most-recent current date, as there may be more to come.
+			if (count($transactions) > 0) {
+				$firstDate = $transactions[count($transactions) -1 ]['date'];
+				foreach ($transactions as $transaction) {
+					// Skip the first day, cos we can't be sure we have all the
+					// transactions for it.
+					if ($transaction['date'] == $firstDate) { continue; }
+
+					if ($lastDate == $transaction['date']) {
+						$dayCount++;
+						$transaction['date'] += $dayCount;
+					} else {
+						$lastDate = $transaction['date'];
+						$dayCount = 0;
 					}
+					$account->addTransaction(new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['description'], $transaction['amount'], $transaction['balance']));
 				}
-				$account->addTransaction(new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['description'], $transaction['amount'], $transaction['balance']));
 			}
 
 			// Now try the historical ones.
@@ -408,35 +459,54 @@
 				$page = $this->getPage('https://www.hsbc.co.uk/1/2/personal/internet-banking/previous-statements');
 				$page = $this->getDocument($page);
 				$nextLink = '';
+				$prevLink = '';
+
+				$pastStatements = array();
 
 				// How much balance was brought forward in the last statement
 				$lastForward = 0.00;
 				// How much balance was brought forward in this statement
 				$thisForward = 0.00;
-
+				// $cancontinue = false;
 				// Keep going until we can't go any more.
 				while (true) {
 					// Get all the links on this page.
 					$links = $page->find('table.hsbcRowSeparator tbody a');
 
-					// Abort once we run out of links.
-					if (count($links) == 0) { break; }
+					// We have reached the end, now go backwards and catch any stragglers.
+					if (count($links) == 0) {
+						if ($prevLink != '') {
+							$nextLink = $prevLink;
+							$page = $this->getPage($nextLink);
+							$page = $this->getDocument($page);
+							$prevLink = '';
+							continue;
+						} else {
+							// If the prevlink has served it's purpose, and we have no more
+							// links, then abort.
+							break;
+						}
+					}
 
 					// Open each statement.
 					foreach ($links as $link) {
 						$title = $link->getAttribute('title');
-
+						echo 'Statement: ', $title, "\n";
+						if (in_array($title, $pastStatements)) {
+							echo "\t", 'Duplicate, ignored.', "\n";
+							continue;
+						}
+						$pastStatements[] = $title;
+						// if ($cancontinue == false) { continue; }
 						$url = 'https://www.hsbc.co.uk'.$link->getAttribute('href');
 						// Bloody HTML Tidy...
 						$url = str_replace('&amp;', '&', $url);
 						$rpage = $this->getPage($url);
-						file_put_contents('/tmp/fakepage.html', $rpage);
 						$rpage = $this->getDocument($rpage);
 
 						preg_match('#^([0-9]+ [a-zA-Z]+ ([0-9]+)) statement$#', $title, $matches);
 						$year = $matches[2];
 						$date = $matches[1];
-						echo 'Statement: ', $title, "\n";
 
 						// Now get the transactions.
 						$items = $rpage->find('table tbody tr');
@@ -524,6 +594,7 @@
 										echo 'ERROR WITH CALCULATED BALANCES:', "\n";
 										echo '    Expected: ', $transaction['balance'], "\n";
 										echo '    Calculated: ', ($lastBalance + $transaction['amount']), "\n";
+										echo '    lastBalance: ', $lastBalance, "\n";
 										echo "\n";
 										var_dump($transaction);
 										echo "\n";
@@ -537,8 +608,8 @@
 
 							// Update the time of the transaction.
 							if ($lastDate == $transaction['date']) {
-								$transaction['date'] += $dayCount;
 								$dayCount++;
+								$transaction['date'] += $dayCount;
 							} else {
 								$lastDate = $transaction['date'];
 								$dayCount = 0;
@@ -559,6 +630,18 @@
 							foreach ($links as $link) {
 								if ($link->getAttribute('title') == 'Next set of statements') {
 									$nextLink = 'https://www.hsbc.co.uk'.$link->getAttribute('href');
+								}
+							}
+						}
+					}
+
+					// Also look for a previous link.
+					if ($prevLink == '') {
+						$links = $page->find('div.extButtons div.hsbcButtonCenter a');
+						if (count($links) > 0) {
+							foreach ($links as $link) {
+								if ($link->getAttribute('title') == 'Previous set of statements') {
+									$prevLink = 'https://www.hsbc.co.uk'.$link->getAttribute('href');
 								}
 							}
 						}

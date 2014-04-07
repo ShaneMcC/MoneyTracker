@@ -35,9 +35,11 @@
 				if ($key == NULL) {
 					$key = $accData['accountkey'];
 					$result = $this->db->accounts->insert($accData);
+
+					echo 'ALL transactions', "\n";
 					$bank->updateTransactions($a, true, true);
 				} else {
-					$r->update($accData);
+					echo 'RECENT transactions', "\n";
 					$bank->updateTransactions($a, false, false);
 				}
 
@@ -47,8 +49,11 @@
 				$isHistoricalOverlap = false;
 				$hasHistoricalOverlap = false;
 				$lastDate = time();
+				$a->sortTransactions(false);
 				foreach ($a->getTransactions() as $t) {
+					echo '.';
 					$transData = $t->toArray();
+					// var_dump($transData);
 
 					// Is the date of the current transaction above the date of the last
 					// one we processed, and is this the first time it has happened?
@@ -64,14 +69,27 @@
 						$lastDate = $transData['time'];
 					}
 
-					if (!$isHistoricalOverlap) {
+					// I forget the purpose of the "Historical Overlap" stuff...
+					// if (!$isHistoricalOverlap) {
 						$result = $this->db->transactions->insert($transData);
 						if ($result == false) {
-							echo 'Failed to insert transaction: ', "\n";
-							var_dump($transData);
+							echo 'Failed to insert: ', $transData['description'], ' => ', $transData['amount'], ' (', date("Y-m-d H:i:s", $transData['time']),')', "\n";
+						} else {
+							echo 'Inserted: ', $transData['description'], ' => ', $transData['amount'], ' (', date("Y-m-d H:i:s", $transData['time']),')', "\n";
 						}
-					}
+					// }
+
+					$first = false;
 				}
+			}
+
+			// Update accounts table with data gleamed from looking at transactions.
+			foreach ($accounts as $a) {
+				$accData = $a->toArray();
+				$key = $accData['accountkey'];
+				unset($accData['accountkey']);
+				$result = $this->db->accounts->insert_update(array('accountkey' => $key), $accData, $accData);
+				var_dump($result);
 			}
 		}
 	}

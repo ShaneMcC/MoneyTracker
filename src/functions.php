@@ -18,4 +18,49 @@
 
 		return new PDO($type . ':host=' . $server . ';port=' . $port . ';dbname=' . $db, $user, $pass);
 	}
+
+	/**
+	 * Ask user for information from the CLI if appropriate.
+	 *
+	 * @param $prompt Prompt to show.
+	 */
+	function getUserInput($prompt) {
+		echo $prompt;
+
+		$handle = fopen('php://stdin', 'r');
+		$line = fgets($handle);
+
+		return trim($line);
+	}
+
+	class database_mapper {
+		private $db;
+
+		public function __construct($db) {
+			$this->db = $db;
+		}
+
+		public function getAccounts() {
+			$accounts = array();
+			foreach ($this->db->accounts as $row) {
+				$r = iterator_to_array($row);
+				$acct = Account::fromArray($r);
+				$acct->setTransactions($this->getTransactions($acct->getAccountKey()));
+				$accounts[] = $acct;
+			}
+			return $accounts;
+		}
+
+		public function getTransactions($accountKey) {
+			$transactions = array();
+			foreach ($this->db->transactions->where('accountkey',  $accountKey)->order("`time` asc") as $row) {
+				$r = iterator_to_array($row);
+				$t = Transaction::fromArray($r);
+				$transactions[] = $t;
+			}
+			return $transactions;
+		}
+	}
+
+	date_default_timezone_set(@date_default_timezone_get());
 ?>

@@ -44,6 +44,20 @@
 			             'source' => $this->mySource);
 		}
 
+		static function fromArray($array) {
+			$obj = new Transaction();
+			$obj->myTime = $array['time'];
+			$obj->myAccountKey = $array['accountkey'];
+			$obj->myType = $array['changetype'];
+			$obj->myDescription = $array['description'];
+			$obj->myAmount = $array['amount'];
+			$obj->myBalance = $array['balance'];
+			$obj->myExtra = $array['extra'];
+			$obj->mySource = $array['source'];
+
+			return $obj;
+		}
+
 		function getTime() { return $this->myTime; }
 		function getType() { return $this->myType; }
 		function getAccountKey() { return $this->myAccountKey; }
