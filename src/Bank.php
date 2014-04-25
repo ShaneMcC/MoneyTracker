@@ -1,5 +1,7 @@
 <?php
 	abstract class Bank {
+		protected $permdata = array();
+
 		/**
 		 * Get the sub-accounts of this object.
 		 * This will return cached account objects.
@@ -28,10 +30,28 @@
 		 *                           description ok?
 		 */
 		abstract function updateTransactions($account, $historical = false, $historicalVerbose = true);
+
+		protected function getPermDataFile() {
+			$reflector = new ReflectionObject($this);
+			return dirname($reflector->getFileName()) . '/.permdata-' . str_replace('/', '_', $this->__toString());
+		}
+
+		protected function savePermData() {
+			file_put_contents($this->getPermDataFile(), serialize($this->permdata));
+		}
+
+		protected function loadPermData() {
+			if (!file_exists($this->getPermDataFile())) { return; }
+			$this->permdata = unserialize(file_get_contents($this->getPermDataFile()));
+		}
+
+		public function __construct() { }
 	}
 
 	abstract class WebBank extends Bank {
 		protected $browser = null;
+
+		public function __construct() { parent::__construct(); }
 
 		/**
 		 * Create a new Browser Object.
@@ -39,7 +59,7 @@
 		protected function newBrowser($loadCookies = true) {
 			$this->browser = new SimpleBrowser();
 			$this->browser->setParser(new SimplePHPPageBuilder());
-			$this->browser->setUserAgent('Mozilla/5.0 (X11; Ubuntu; Linux i686; rv:28.0) Gecko/20100101 Firefox/28.0');
+			$this->browser->setUserAgent('Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:29.0) Gecko/20100101 Firefox/29.0');
 			if ($loadCookies) {
 				$this->loadCookies();
 			}

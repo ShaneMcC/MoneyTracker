@@ -24,6 +24,7 @@
 		 * @param $securekey Secure Key Code
 		 */
 		public function __construct($account, $secretword, $securekey) {
+			parent::__construct();
 			$this->account = $account;
 			$this->secretword = $secretword;
 			$this->securekey = $securekey;

@@ -18,13 +18,14 @@
 		private $accountLinks = array();
 
 		/**
-		 * Create a HSBC.
+		 * Create a Halifax.
 		 *
 		 * @param $account Account number (IB...)
 		 * @param $password Secret Word
 		 * @param $memorableinfo Secure Key Code
 		 */
 		public function __construct($account, $password, $memorableinfo) {
+			parent::__construct();
 			$this->account = $account;
 			$this->password = $password;
 			// The '.' is to push everything back one for login.
