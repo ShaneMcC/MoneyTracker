@@ -358,7 +358,7 @@
 				foreach ($transactions as $transaction) {
 					// Skip the first day, cos we can't be sure we have all the
 					// transactions for it.
-					if ($transaction['date'] == $firstDate) { continue; }
+					// if ($transaction['date'] == $firstDate) { continue; }
 
 					if ($lastDate == $transaction['date']) {
 						$dayCount++;

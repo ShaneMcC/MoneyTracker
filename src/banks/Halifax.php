@@ -146,7 +146,7 @@
 
 				$numbers  = $this->cleanElement($page->find('p.numbers', $items->eq($i)));
 				preg_match('@Sort Code</span>([0-9]{2}-[0-9]{2}-[0-9]{2}), <span class="[^"]+">Account Number</span> ([0-9]+)@', $numbers, $matches);
-				var_dump($numbers);
+				// var_dump($numbers);
 				if (!isset($matches[1])) { continue; }
 				$sortcode = $matches[1];
 				$number = $matches[2];
@@ -293,7 +293,7 @@
 				foreach ($transactions as $transaction) {
 					// Skip the first day, cos we can't be sure we have all the
 					// transactions for it.
-					if ($transaction['date'] == $firstDate) { continue; }
+					// if ($transaction['date'] == $firstDate) { continue; }
 
 					if ($lastDate == $transaction['date']) {
 						$dayCount++;
