@@ -89,7 +89,6 @@
 				$key = $accData['accountkey'];
 				unset($accData['accountkey']);
 				$result = $this->db->accounts->insert_update(array('accountkey' => $key), $accData, $accData);
-				var_dump($result);
 			}
 		}
 	}

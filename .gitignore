@@ -1,3 +1,4 @@
 src/banks/.cookies-*
 src/banks/.permdata-*
 src/config.user.php
+src/test.php

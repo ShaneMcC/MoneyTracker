@@ -83,16 +83,16 @@
 		}
 
 		/**
-		 * Take a Balance as exported by HSBC, and return it as a standard balance.
+		 * Take a Balance as exported by Halifax, and return it as a standard balance.
 		 *
-		 * @param $balance Balance input (eg: " £ 1.00 D " or " &163; 1.00 D ")
-		 * @return Correct balance (eg: "-1.00")
+		 * @param $balance Balance input (eg: "£1.00" or "-£1.00")
+		 * @return Correct balance (eg: "1.00" or "-1.00")
 		 */
 		private function parseBalance($balance) {
-			// Check for negative
+			$negative = strpos($balance, '-') !== FALSE;
 			$balance = str_replace(',', '', $balance);
 			preg_match('@([0-9]+.[0-9]+)$@', $balance, $matches);
-			return $matches[1];
+			return $negative ? 0 - $matches[1] : $matches[1];
 		}
 
 		/**
@@ -146,7 +146,8 @@
 
 				$numbers  = $this->cleanElement($page->find('p.numbers', $items->eq($i)));
 				preg_match('@Sort Code</span>([0-9]{2}-[0-9]{2}-[0-9]{2}), <span class="[^"]+">Account Number</span> ([0-9]+)@', $numbers, $matches);
-				if (!isset($matches[1])) { die('TEST'); }
+				var_dump($numbers);
+				if (!isset($matches[1])) { continue; }
 				$sortcode = $matches[1];
 				$number = $matches[2];
 				$balance = $this->cleanElement($page->find('div.accountBalance span.balanceShowMeAnchor', $items->eq($i)));

@@ -57,6 +57,8 @@
 		 * Create a new Browser Object.
 		 */
 		protected function newBrowser($loadCookies = true) {
+			global $__simpleSocketContext;
+			$__simpleSocketContext = array();
 			$this->browser = new SimpleBrowser();
 			$this->browser->setParser(new SimplePHPPageBuilder());
 			$this->browser->setUserAgent('Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:29.0) Gecko/20100101 Firefox/29.0');
@@ -111,16 +113,16 @@
 				if ($justGet) {
 					$this->newBrowser();
 				} else {
+					// We need a new browser, so we're going to need to log in.
 					if (!$this->login()) { return false; }
 				}
 			}
 
 			$page = $this->browser->get($url);
-			if (!$justGet && (strpos($page, 'View My accounts') === FALSE)) {
+			if (!$justGet && !$this->isLoggedIn($page)) {
 				if (!$this->login()) { return false; }
 				$page = $this->browser->get($url);
 			}
-			file_put_contents('/tmp/fakepage.html', $page);
 			return $page;
 		}
 
@@ -146,7 +148,6 @@
 			$tidy = tidy_parse_string($html, $config, 'utf8');
 			$tidy->cleanRepair();
 			$html = $tidy->value;
-			file_put_contents('/tmp/tidyfakepage.html', $html);
 			return phpQuery::newDocument($html);
 		}
 

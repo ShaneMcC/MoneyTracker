@@ -67,7 +67,7 @@
 			$this->browser->setFieldById('login-uid', $this->account);
 			$page = $this->browser->submitFormById('login_uid_form');
 			if (empty($page)) {
-				die("Tesco Suck...");
+				die('Error getting initial page.');
 			}
 			$document = $this->getDocument($page);
 
@@ -151,6 +151,9 @@
 
 			// Save the DeviceID incase it changes.
 			preg_match('#var deviceID = "(.*)"#', $page, $m);
+			if (!isset($m[1])) {
+				die('Login failed.');
+			}
 			$deviceID = $m[1];
 
 			$this->permdata['deviceID'] = $deviceID;
@@ -158,7 +161,8 @@
 
 			// Now progress the last bit.
 			$page = $this->browser->submitFormById('returnform');
-			$this->saveCookies();
+
+			// Never save cookies, tesco bank is flakey as fuck.
 
 			return $this->isLoggedIn($page);
 		}
@@ -185,7 +189,21 @@ V8JS
 		}
 
 		public function isLoggedIn($page) {
-			return (strpos($page, 'You\'re logged in to Online Banking') !== FALSE);
+			return (strpos($page, 'You\'re logged in to Online Banking') !== FALSE) || (strpos($page, '<a href="/Tesco_Consumer/ChooseServiceReqType.do">Manage your account</a>') !== FALSE);
+		}
+
+		/**
+		 * Take a Balance as exported by TescoBank, and return it as a standard balance.
+		 *
+		 * @param $balance Balance input (eg: "£1.00" or "-£1.00")
+		 * @return Correct balance (eg: "1.00" or "-1.00")
+		 */
+		private function parseBalance($balance) {
+			$negative = strpos($balance, '-') !== FALSE;
+			$balance = str_replace(',', '', $balance);
+			$balance = str_replace('&nbsp;', '', $balance);
+			preg_match('@([0-9]+.[0-9]+)$@', $balance, $matches);
+			return $negative ? 0 - $matches[1] : $matches[1];
 		}
 
 		/**
@@ -221,13 +239,50 @@ V8JS
 					}
 				}
 			}
-
 			$page = $this->getPage('https://www.tescobank.com/portal/auth/portal/sv/overview/SVInitialDataWindow?action=1&action=initialDataNoScript');
-			die('getAccounts is unsupported.');
+
 			if (!$this->isLoggedIn($page)) { return $this->accounts; }
 			$page = $this->getDocument($page);
 
+			$accounts = array();
 
+			$accountdetails = $page->find('#sv-creditcard-product');
+			$items = $page->find('div.product', $accountdetails);
+			$owner = $this->account;
+			for ($i = 0; $i < count($items); $i++) {
+				// Get the values
+				$type = $this->cleanElement($page->find('h2.product-name a', $items->eq($i)));
+
+				// Tesco annoyingly hides the full number of the account, so we use fake sort-code to pad-out the account-key a bit.
+				// 00-XX-YY is not a valid sort code. Use 00-01 for tesco credit card.
+				$sortcode = '00-00-01';
+				$number = $this->cleanElement($page->find('dd.card-number', $items->eq($i)));
+
+				$balance = $this->parseBalance($this->cleanElement($page->find('dd.current-balance', $items->eq($i))));
+
+				// Finally, create an account object.
+				$account = new Account();
+				$account->setSource($this->__toString());
+				$account->setType($type);
+				$account->setOwner($owner);
+				$account->setSortCode($sortcode);
+				$account->setAccountNumber($number);
+				$account->setBalance(0 - $balance); // "Balance" given is how much is owed
+
+				$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
+				$this->accountLinks[$accountKey] = $page->find('h2.product-name a', $items->eq($i))->attr("href");
+
+				$available = $this->parseBalance($this->cleanElement($page->find('dd.available-credit', $items->eq($i))));
+				$account->setAvailable($available);
+
+				if ($transactions) {
+					$this->updateTransactions($account, $historical, $historicalVerbose);
+				}
+
+				$this->accounts[] = $account;
+			}
+
+			// return array();
 			return $this->accounts;
 		}
 
@@ -239,13 +294,15 @@ V8JS
 		 */
 		private function cleanTransaction($transaction) {
 			// Get a better date
+			$bits = explode('/', $transaction['date']);
+			$transaction['date'] = $bits[1].'/'.$bits[0].'/'.$bits[2];
 			$transaction['date'] = strtotime($transaction['date']);
 
 			// Rather than separate in/out, lets just have a +/- amount
 			if (!empty($transaction['out'])) {
-				$transaction['amount'] = 0 - $transaction['out'];
+				$transaction['amount'] = 0 - $this->parseBalance($transaction['out']);
 			} else if (!empty($transaction['in'])) {
-				$transaction['amount'] = $transaction['in'];
+				$transaction['amount'] = $this->parseBalance($transaction['in']);
 			}
 
 			// Unset any unneeded values
@@ -255,6 +312,70 @@ V8JS
 
 			return $transaction;
 		}
+
+		private function extractTransactions($page, $baseBalance) {
+			$transactions = array();
+
+			// Look for errors.
+			$items = $page->find('td[colspan=5].dispute');
+			if (count($items) > 0) { return $transactions; }
+
+			// Now get the transactions.
+			$items = $page->find('#displayTransaction table tr');
+			foreach ($items as $row) {
+				echo 'Got Item', "\n";
+				$columns = pq($row, $page)->find('td');
+				if (count($columns) < 2) { continue; }
+
+				// Pull out the data
+				$transaction['extra'] = array();
+				$transaction['extra']['transactiondate'] = $this->cleanElement($columns->eq(0));
+				$transaction['date'] = $this->cleanElement($columns->eq(1));
+				$transaction['description'] = $this->cleanElement($columns->eq(2)->find('a'));
+				$description_url = $columns->eq(2)->find('a')->attr('href');
+				if (!empty($description_url)) {
+					$url = 'https://onlineservicing.creditcards.tescobank.com' . $description_url;
+					$dpage = $this->getPage($url, true);
+					$dpage = $this->getDocument($dpage);
+
+					$items = $dpage->find('table tr td[colspan=2].normalText');
+					$next = false;
+					foreach ($items as $col) {
+						$content = $this->cleanElement($col);
+						if ($content == 'Merchant Information') {
+							$next = true;
+						} else if ($next) {
+							$bits = explode("\n", trim($col->nodeValue));
+							foreach ($bits as &$b) { $b = trim($b); }
+							$transaction['description'] = implode(' // ', $bits);
+							break;
+						}
+					}
+				}
+
+				$transaction['out'] = str_replace(',', '', $this->cleanElement($columns->eq(3)));
+				$transaction['in'] = str_replace(',', '', $this->cleanElement($columns->eq(4)));
+				$transaction['balance'] = '';
+
+				$transaction['typecode'] = empty($transaction['out']) ? 'IN' : 'OUT';
+				$transaction['type'] = empty($transaction['out']) ? 'Credit' : 'Debit';
+
+				$transaction = $this->cleanTransaction($transaction);
+
+				$transactions[] = $transaction;
+			}
+
+			// Now loop again, to add in the balance guesses.
+			$transactions = array_reverse($transactions);
+			foreach ($transactions as &$t) {
+				$baseBalance += $t['amount'];
+				$t['balance'] = $baseBalance;
+			}
+			$transactions = array_reverse($transactions);
+
+			return $transactions;
+		}
+
 		/**
 		 * Update the transactions on the given account object.
 		 *
@@ -264,12 +385,102 @@ V8JS
 		 * @param $historicalVerbose (Default: false) Should verbose data be
 		 *                           collected for historical, or is a single-line
 		 *                           description ok?
+		 * @param $failOnSSO (Default: false) Should we fail if SSO fails?
 		 */
-		public function updateTransactions($account, $historical = false, $historicalVerbose = true) {
+		public function updateTransactions($account, $historical = false, $historicalVerbose = true, $failOnSSO = false) {
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
+			$page = $this->getPage('https://www.tescobank.com/' . $this->accountLinks[$accountKey]);
+			if (!$this->isLoggedIn($page)) { return false; }
 
-			die('updateTransactions is unsupported.');
+			// The CC server doesn't get along with PHP...
+			$this->browser->setStreamContext(array('ssl' => array('ciphers' => 'AES256-SHA')));
+
+			$page = $this->browser->submitFormById('manage-creditcard-account-no-js-form');
+			// Check again if we are logged in, sometimes the SSO sucks.
+			if (!$this->isLoggedIn($page)) {
+				// SSO Failed, do a fresh login...
+				// TODO: Figure out a better way than doing this.
+				echo 'SSO Fail.';
+				if ($failOnSSO) { return false; }
+				$this->login(true);
+
+				return $this->updateTransactions($account, $historical, $historicalVerbose, true);
+			}
+			// Get last statement balance.
+			preg_match('#<strong>Statement balance</strong></td>[^"]+"normalText">([^<]+)</td>#', $page, $m);
+			$lastBalance = 0 - $this->parseBalance($m[1]);
+
+			// Now get most recent transactions.
+			$page = $this->getPage('https://onlineservicing.creditcards.tescobank.com/Tesco_Consumer/ViewTransactions.do', true);
+			$page = $this->getDocument($page);
+
+			$transactions = $this->extractTransactions($page, $lastBalance);
+
+			if ($historical) {
+				// Get some old shit.
+				$dates = $page->find('select[name="cycleDate"] option');
+				for ($i = 0; $i < count($dates); $i++) {
+					$cycleDate = $dates->eq($i)->attr("value");
+					if ($cycleDate == '00') { continue; }
+					echo $this->cleanElement($dates->eq($i)), "\n";
+					$url = 'https://onlineservicing.creditcards.tescobank.com/Tesco_Consumer/Transactions.do?cycleDate=' . $cycleDate;
+
+					$page = $this->getPage($url, true);
+					$page = $this->getDocument($page);
+
+					$lastBalance = '';
+					$items = $page->find('table tr td.normalText');
+					$next = false;
+					foreach ($items as $col) {
+						$content = $this->cleanElement($col);
+						if ($content == 'Previous balance') {
+							$next = true;
+						} else if ($next) {
+							$lastBalance = 0 - $this->parseBalance($this->cleanElement($col));
+							break;
+						}
+					}
+
+					$olderTransactions = $this->extractTransactions($page, $lastBalance);
+					$transactions = array_merge($transactions, $olderTransactions);
+				}
+			}
+
+			// Now go through the transactions bottom-top so that we have them in the
+			// order that they occured.
+			$transactions = array_reverse($transactions);
+
+			// To make ordering the transactions easier, rather than having
+			// all the days transactions having the same time, we add a second
+			// each time. (so the first transaction of the day happened at
+			// 00:00:00 the second at 00:00:01 and so on.
+			$dayCount = 0;
+			$lastDate = 0;
+
+			// Ignore transactions on the most-recent current date, as there may be more to come.
+			if (count($transactions) > 0) {
+				$firstDate = $transactions[count($transactions) -1 ]['date'];
+				foreach ($transactions as $transaction) {
+					// Skip the first day, cos we can't be sure we have all the
+					// transactions for it.
+					if ($transaction['date'] == $firstDate) { continue; }
+
+					if ($lastDate == $transaction['date']) {
+						$dayCount++;
+						$transaction['date'] += $dayCount;
+					} else {
+						$lastDate = $transaction['date'];
+						$dayCount = 0;
+					}
+					$account->addTransaction(new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['typecode'], $transaction['description'], $transaction['amount'], $transaction['balance'], $transaction['extra']));
+				}
+			}
+
+			// Reset the stream context.
+			$this->browser->setStreamContext(array());
+
+echo "Done Transactions.\n";
 		}
 	}
 ?>
