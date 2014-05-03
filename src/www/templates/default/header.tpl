@@ -12,7 +12,7 @@
 	<!-- Bootstrap -  http://twitter.github.com/bootstrap/index.html -->
 	<!-- Using Icons from GlyphIcons - http://glyphicons.com/ -->
 	<link href="{[getWebLocation]}bootstrap/css/bootstrap.min.css" rel="stylesheet">
-	<link href="{[getWebLocation]}bootstrap/css/bootstrap-responsive.min.css" rel="stylesheet">
+	<link href="{[getWebLocation]}bootstrap/css/bootstrap-theme.min.css" rel="stylesheet">
 
 	<link href="{[getWebLocation('style.css')]}" rel="stylesheet">
 	<link href="{[getWebLocation('style-local.css')]}" rel="stylesheet">
@@ -20,54 +20,35 @@
 	<script src="{[getWebLocation]}bootstrap/js/jquery.js"></script>
 	<script src="{[getWebLocation]}bootstrap/js/bootstrap.min.js"></script>
 
-	<!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
-	<!--[if lt IE 9]>
-		<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-	<![endif]-->
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
 
 	</head>
-	<body>
+	<body role="document">
 
-			<div class="navbar navbar-fixed-top">
-				<div class="navbar-inner">
-					<div class="{{$fluid ? 'container-fluid' : 'container'}}">
-						<a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-							<span class="icon-bar"></span>
-							<span class="icon-bar"></span>
-							<span class="icon-bar"></span>
-						</a>
-						<a class="brand" href="#">Money Tracker</a>
-						<div class="nav">
-							<ul class="nav">
-								<li {[ca('page', 'home')]}><a href="{[getWebLocation]}">Home</a></li>
-								<li {[ca('page', 'transactions')]}><a href="{[getWebLocation]}transactions">Transactions</a></li>
-							</ul>
-						</div>
-						<div class="nav pull-right">
-							<ul class="nav">
-							</ul>
-						</div>
-					</div>
+		<!-- Fixed navbar -->
+		<div class="navbar navbar-default navbar-fixed-top" role="navigation">
+			<div class="{{$fluid ? 'container-fluid' : 'container'}}">
+				<div class="navbar-header">
+					<button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+						<span class="sr-only">Toggle navigation</span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+						<span class="icon-bar"></span>
+					</button>
+					<a class="navbar-brand" href="#">Money Tracker</a>
+				</div>
+				<div class="navbar-collapse collapse">
+					<ul class="nav navbar-nav">
+						<li {[ca('page', 'home')]}><a href="{[getWebLocation]}">Home</a></li>
+						<li {[ca('page', 'transactions')]}><a href="{[getWebLocation]}transactions">Transactions</a></li>
+					</ul>
 				</div>
 			</div>
+		</div>
 
-			<script type="text/javascript">
-				$('.dropdown-toggle').dropdown();
-			</script>
-
-@ if ($fluid) {
-	<style>
-		{-- Bootstrap doesn't do offsets in fluid mode, so hax it here. --}
-		div.offset3 {
-			margin-left: 25% !important
-		}
-
-		{-- It also fucks with form elements... --}
-		.row-fluid [class*="span"] {
-			display: inline-block;
-		}
-	</style>
-@ }
-
-	<div class="{{$fluid ? 'container-fluid' : 'container'}}">
+	<div class="{{$fluid ? 'container-fluid' : 'container'}}" role="main">
 		<div class="{{$fluid ? 'row-fluid' : 'row'}}">

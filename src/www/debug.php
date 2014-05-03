@@ -1,5 +1,6 @@
 <?php
 	require_once(dirname(__FILE__) . '/../config.php');
+	require_once(dirname(__FILE__) . '/functions.php');
 
 	echo '<a href="index.php">Main Page</a><br><br>';
 

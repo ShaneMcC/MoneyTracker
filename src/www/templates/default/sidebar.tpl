@@ -18,7 +18,7 @@
 
 		@$margin = 15 + (isset($item['Margin']) ? (int)$item['Margin'] : 0);
 
-		<li class="{{$class}}"><a style="padding-left: {{$margin}}px;" href="{{$item['Link']}}"><i class="icon-{{$item['Icon']}}"></i> {{$item['Title']}}</a></li>
+		<li class="{{$class}}"><a style="padding-left: {{$margin}}px;" href="{{$item['Link']}}"><span class="glyphicon glyphicon-{{$item['Icon']}}"></span> {{$item['Title']}}</a></li>
 	@} /* Foreach section */
 @} /* Foreach sidebar */
 </ul>

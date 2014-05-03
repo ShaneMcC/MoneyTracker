@@ -1,3 +1,4 @@
+<div class="row">
 <h1>Oops!</h1>
 <p>
 	Oh, it looks like something bad happened, something broke.
@@ -11,3 +12,4 @@
 <p>
 	<small>It looks like you wanted: {{$_SERVER['REQUEST_URI']}}</small>
 </p>
+<div>

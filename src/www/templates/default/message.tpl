@@ -1,4 +1,4 @@
-	<div class="alert alert-block alert-{{$message[0]}}">
+	<div class="alert alert-warning alert-dismissable alert-{{$message[0]}}">
 		<a class="close" data-dismiss="alert" href="#">×</a>
 		<h4 class="alert-heading">{{$message[1]}}</h4>
 		@if (isset($message[3]) && $message[3] == false) {

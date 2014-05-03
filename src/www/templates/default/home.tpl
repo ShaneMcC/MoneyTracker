@@ -1,4 +1,4 @@
-<div class="hero-unit">
+<div class="jumbotron">
 	<h1>Welcome!</h1>
 	<p>
 		Yay money tracker!
@@ -8,28 +8,28 @@
 	</p>
 </div>
 
-<div class="row-fluid">
-	<div class="span4">
+<div class="row">
+	<div class="col-sm-4 col-md-4">
 		<h2>Something</h2>
 		<p>
 			Some data here
 		</p>
-		<p><a class="btn" href="{[getWebLocation]}">See More &raquo;</a></p>
+		<p><a class="btn btn-default" href="{[getWebLocation]}">See More »</a></p>
 	</div>
 
-	<div class="span4">
+	<div class="col-sm-4 col-md-4">
 		<h2>Something</h2>
 		<p>
 			Some data here
 		</p>
-		<p><a class="btn" href="{[getWebLocation]}">See More &raquo;</a></p>
+		<p><a class="btn btn-default" href="{[getWebLocation]}">See More »</a></p>
 	</div>
 
-	<div class="span4">
+	<div class="col-sm-4 col-md-4">
 		<h2>Something</h2>
 		<p>
 			Some data here
 		</p>
-		<p><a class="btn" href="{[getWebLocation]}">See More &raquo;</a></p>
+		<p><a class="btn btn-default" href="{[getWebLocation]}">See More »</a></p>
 	</div>
 </div>

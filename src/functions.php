@@ -33,46 +33,5 @@
 		return trim($line);
 	}
 
-	class database_mapper {
-		private $db;
-		private $pdo;
-
-		public function __construct($pdo) {
-			$this->db = new NotORM($pdo);
-			$this->pdo = $pdo;
-		}
-
-		public function getAccounts() {
-			$accounts = array();
-			foreach ($this->db->accounts as $row) {
-				$r = iterator_to_array($row);
-				$acct = Account::fromArray($r);
-				$acct->setTransactions($this->getTransactions($acct->getAccountKey()));
-				$accounts[] = $acct;
-			}
-			return $accounts;
-		}
-
-		public function getTransactions($accountKey) {
-			$transactions = array();
-			foreach ($this->db->transactions->where('accountkey',  $accountKey)->order("`time` asc") as $row) {
-				$r = iterator_to_array($row);
-				$t = Transaction::fromArray($r);
-				foreach ($this->db->taggedtransaction->where('transaction',  $t->getHash()) as $tag) {
-					$t->addTag($tag['tag'], $tag['value']);
-				}
-				$t->resetTagsChanged();
-				$transactions[] = $t;
-			}
-			return $transactions;
-		}
-
-		public function getTags() {
-			$q = $this->pdo->query('SELECT t.id AS tagid, c.name AS category, t.tag AS tag FROM tags AS t JOIN categories AS c ON t.category = c.id ORDER by c.name ASC, t.tag ASC');
-			$result = $q->fetchAll(PDO::FETCH_ASSOC);
-			return $result;
-		}
-	}
-
 	date_default_timezone_set(@date_default_timezone_get());
 ?>
