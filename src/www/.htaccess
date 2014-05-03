@@ -1,0 +1,29 @@
+# Don't index anything.
+Options -Indexes
+
+# Directory Indexing
+RewriteCond %{REQUEST_FILENAME}/index.php !-f
+RewriteCond %{SCRIPT_FILENAME} -d
+RewriteRule . index.php?p=error403 [L]
+
+# Rewrite Rules
+RewriteEngine On
+
+# Forbidden Files pretend they don't exist.
+RewriteRule .tpl$ index.php?p=error404 [L]
+RewriteRule "^(.*/)?\.git/" index.php?p=error404 [L]
+RewriteRule ^(templates_c|classes|inc)(/.*)?$ index.php?p=error404 [L]
+
+# 404 Handler for files in allowed direcories
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{SCRIPT_FILENAME} !-d
+RewriteRule ^(bootstrap|templates|images)/.*$ index.php?p=error404 [L]
+
+# Allowed Files
+RewriteRule ^(bootstrap|templates|images)/.*$ - [L]
+RewriteRule ^(debug|index).php$ - [L]
+
+# Everything Else
+RewriteRule ^([^/]+)/(.+)$ index.php?p=$1&s=$2 [L]
+RewriteRule ^(.*)/$ index.php?p=$1 [L]
+RewriteRule ^(.*)$ index.php?p=$1 [L]

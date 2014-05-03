@@ -16,6 +16,11 @@
 	$config['database']['user'] = 'bankinfo';
 	$config['database']['pass'] = 'bankinfo';
 
+
+	// Templates directory.
+	$config['web']['templates'] = 'templates';
+	// Template theme.
+	$config['web']['theme'] = 'SomeTheme';
 	setlocale(LC_MONETARY, 'en_GB.UTF-8');
 
 	// Bank object(s) used for updates.

@@ -1,6 +1,8 @@
 <?php
 	require_once(dirname(__FILE__) . '/../config.php');
 
+	echo '<a href="index.php">Main Page</a><br><br>';
+
 	$dbmap = new database_mapper(getPDO($config['database']));
 	$accounts = $dbmap->getAccounts();
 

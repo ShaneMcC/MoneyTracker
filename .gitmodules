@@ -10,3 +10,6 @@
 [submodule "src/3rdparty/MoneyAnalyser"]
 	path = src/3rdparty/MoneyAnalyser
 	url = git://github.com/csmith/MoneyAnalyser.git
+[submodule "src/www/bootstrap"]
+	path = src/www/bootstrap
+	url = https://github.com/ShaneMcC/Bootstrap
