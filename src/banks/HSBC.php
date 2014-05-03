@@ -249,7 +249,8 @@
 			// Correct the balance.
 			$transaction['balance'] = $this->cleanBalance($transaction['balance'], $transaction['balance_type']);
 
-			$transaction['type'] = preg_replace('#[^A-Z0-9)]#', '', $transaction['type']);
+			$transaction['typecode'] = preg_replace('#[^A-Z0-9)]#', '', $transaction['typecode']);
+			$transaction['type'] = $this->getType($transaction['typecode']);
 
 			// Unset any unneeded values
 			unset($transaction['out']);
@@ -325,7 +326,6 @@
 				// Pull out the data
 				$transaction['date'] = $this->cleanElement($columns->eq(0));
 				$transaction['typecode'] = $this->cleanElement($columns->eq(1));
-				$transaction['type'] = $this->getType($transaction['typecode']);
 
 				$transaction['description'] = $this->cleanElement($columns->eq(2));
 				$transaction['out'] = $this->cleanElement($columns->eq(3));
@@ -449,7 +449,7 @@
 							// Pull out the data
 							$transaction = array();
 							$transaction['date'] = $this->cleanElement($columns->eq(0)->find('p'));
-							$transaction['type'] = $this->cleanElement($columns->eq(1)->find('p'));
+							$transaction['typecode'] = $this->cleanElement($columns->eq(1)->find('p'));
 							$fullDesc = $columns->eq(2)->find('p');
 							$transaction['description'] = $this->cleanElement($fullDesc);
 							$transaction['out'] = $this->cleanElement($columns->eq(3)->find('p'));
@@ -534,7 +534,7 @@
 							}
 
 							if ($transaction['type'] != '') {
-								$account->addTransaction(new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['description'], $transaction['amount'], $transaction['balance']));
+								$account->addTransaction(new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['typecode'], $transaction['description'], $transaction['amount'], $transaction['balance']));
 							}
 						}
 					}

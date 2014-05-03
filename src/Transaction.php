@@ -10,6 +10,10 @@
 		private $mySource;
 		private $myAccountKey;
 
+		private $tags = array();
+		private $tagValue = 0;
+		private $tagsChanged = false;
+
 		public function __construct($source = '', $accountKey = '', $time = '', $type = '', $typecode = '', $description = '', $amount = '', $balance = '', $extra = '') {
 			$this->myTime = $time;
 			$this->myType =  $type;
@@ -47,6 +51,33 @@
 			             'source' => $this->mySource);
 		}
 
+		public function addTag($tagid, $value) {
+			if (abs($this->tagValue + $value) > abs($this->myAmount)) { return false; }
+
+			$this->tags[] = array($tagid, $value);
+			$this->tagValue += $value;
+			$this->tagsChanged = true;
+
+			return true;
+		}
+
+		public function resetTagsChanged() {
+			$this->tagsChanged = false;
+		}
+
+		public function tagsChanged() {
+			return $this->tagsChanged;
+		}
+
+		public function getTags() {
+			return $this->tags;
+		}
+
+		public function clearTags() {
+			$this->tags = array();
+			$this->tagsChanged = true;
+		}
+
 		static function fromArray($array) {
 			$obj = new Transaction();
 			$obj->myTime = $array['time'];
@@ -58,6 +89,10 @@
 			$obj->myBalance = $array['balance'];
 			$obj->myExtra = $array['extra'];
 			$obj->mySource = $array['source'];
+
+			if ($obj->getHash() != $array['hash']) {
+				echo '<strong>Error: </strong> ', $obj->getHash(), ' != ', $array['hash'], '<br>';
+			}
 
 			return $obj;
 		}
@@ -86,9 +121,11 @@
 			                                 $this->getTime(),
 			                                 crc32($this->getDescription()),
 			                                 $this->getTypeCode(),
-			                                 str_replace('-', 'N', $this->getAmount()),
-			                                 str_replace('-', 'N', $this->getBalance())
+			                                 str_replace('-', 'N', sprintf('%01.2f', $this->getAmount())),
+			                                 str_replace('-', 'N', sprintf('%01.2f', $this->getBalance()))
 			                                 );
+
+			$trans = new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['description'], $transaction['amount'], $transaction['balance']);
 		}
 	}
 ?>

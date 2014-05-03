@@ -16,7 +16,9 @@
 	$config['database']['user'] = 'bankinfo';
 	$config['database']['pass'] = 'bankinfo';
 
-	// Bank object(s) used for nightly cron.
+	setlocale(LC_MONETARY, 'en_GB.UTF-8');
+
+	// Bank object(s) used for updates.
 	$config['bank'] = array();
 	$config['bank'][] = new HSBC('IB123456789', '010101', '12345678');
 
