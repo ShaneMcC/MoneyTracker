@@ -2,7 +2,7 @@
 		<h1>{{$account->getFullNumber()}}</h1>
 
 		<div class="table-responsive">
-		<table class="table table-striped table-bordered table-hover table-condensed">
+		<table class="table table-striped table-bordered table-hover table-condensed transactions">
 		<tr>
 		<th class="date">Date</th>
 		<th class="typecode">Type</th>
@@ -18,7 +18,7 @@
 		@foreach ($account->getTransactions() as $transaction) {
 			@if ($transaction->getTime() < $cutoff) { continue; }
 			<tr>
-			<td class="date">{{date("Y-m-d H:i:s", $transaction->getTime())}}</td>
+			<td class="date" data-time="{{$transaction->getTime()}}">{{date("Y-m-d H:i:s", $transaction->getTime())}}</td>
 			<td class="typecode"><span data-toggle="tooltip" title="{{$transaction->getType()}}">{{$transaction->getTypeCode()}}</span></td>
 			<td class="description"><span data-toggle="tooltip" title="{{$transaction->getHash()}}">{{$transaction->getDescription()}}</span></td>
 			<td class="amount">{{money_format('%.2n', $transaction->getAmount())}}</td>
@@ -74,9 +74,17 @@
 
 						<!-- Text input-->
 						<div class="form-group">
-							<label class="col-md-4 control-label" for="transaction">Description</label>
+							<label class="col-md-4 control-label" for="description">Description</label>
 							<div class="col-md-8">
 								<input name="description" type="text" placeholder="" class="form-control input-md" disabled>
+							</div>
+						</div>
+
+						<!-- Text input-->
+						<div class="form-group">
+							<label class="col-md-4 control-label" for="date">Date</label>
+							<div class="col-md-8">
+								<input name="date" type="text" placeholder="" class="form-control input-md" disabled>
 							</div>
 						</div>
 
@@ -140,11 +148,14 @@
 
 	function addTag(clickedTag) {
 		transid = $(clickedTag).parent().parent().attr('data-id');
+		date = parseInt($('td.date', $(clickedTag).closest('tr')).attr('data-time') + '000');
+		date = new Date(date).toUTCString();
 		description = $('td.description span', $(clickedTag).closest('tr')).text();
 		remaining = parseFloat($(clickedTag).attr('data-remaining')).toFixed(2);
 
 		$('#addTagForm input[name="transaction"]').val(transid);
 		$('#addTagForm input[name="description"]').val(description);
+		$('#addTagForm input[name="date"]').val(date);
 		$('#addTagForm input[name="value"]').val(remaining);
 
 		$('#addTagModal').modal();

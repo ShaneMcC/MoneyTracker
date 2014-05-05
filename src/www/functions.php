@@ -21,14 +21,14 @@
 		foreach ($transaction->getTags() as $t) {
 			echo '<span class="label label-success" data-tagid="', $t[0], '">';
 			echo $tags[$t[0]], ' (', money_format('%.2n', $t[1]), ')';
-			echo '</span>&nbsp;';
+			echo '</span> ';
 		}
 
 		$remaining = abs($transaction->getAmount()) - $transaction->getTagValue();
 		if ($remaining > 0) {
 			echo '<span class="label label-danger" data-remaining="', $remaining, '">';
 			echo 'Untagged (', money_format('%.2n', $remaining), ')';
-			echo '</span>&nbsp;';
+			echo '</span> ';
 		}
 
 	}

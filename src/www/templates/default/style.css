@@ -358,3 +358,32 @@ div.controls p {
   top: auto;
   width: 280px;
 }
+
+
+/**********************************************************************
+ * Transactions Table
+ **********************************************************************/
+
+table.transactions th.date, table.transactions td.date {
+	width: 150px;
+}
+
+table.transactions th.typecode, table.transactions td.typecode {
+	width: 60px;
+}
+
+table.transactions th.description, table.transactions td.description {
+	width: 45%;
+}
+
+table.transactions th.amount, table.transactions td.amount {
+	width: 100px;
+}
+
+table.transactions th.balance, table.transactions td.balance {
+	width: 120px;
+}
+
+table.transactions th.transactiontags, table.transactions td.transactiontags {
+
+}
