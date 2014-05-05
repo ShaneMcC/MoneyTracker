@@ -1,16 +1,17 @@
 <?php
 	require_once(dirname(__FILE__) . '/../config.php');
 	require_once(dirname(__FILE__) . '/functions.php');
+	require_once(dirname(__FILE__) . '/classes/database.php');
 
 	echo '<a href="index.php">Main Page</a><br><br>';
 
-	$dbmap = new database_mapper(getPDO($config['database']));
+	$dbmap = new database(getPDO($config['database']));
 	$accounts = $dbmap->getAccounts();
 
 	$tags = array();
 	$jsontags = array();
 	echo '<pre>';
-	foreach ($dbmap->getTags() as $t) {
+	foreach ($dbmap->getAllTags() as $t) {
 		$tags[$t['tagid']] = $t['category'] . ' :: ' . $t['tag'];
 		$jsontags[$t['category']][$t['tag']] = $t['tagid'];
 		echo $t['tagid'], ' -> ', $tags[$t['tagid']], "\n";
