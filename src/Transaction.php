@@ -73,8 +73,13 @@
 			return $this->tags;
 		}
 
+		public function getTagValue() {
+			return $this->tagValue;
+		}
+
 		public function clearTags() {
 			$this->tags = array();
+			$this->tagValue = 0;
 			$this->tagsChanged = true;
 		}
 

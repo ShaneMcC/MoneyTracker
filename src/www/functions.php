@@ -1,45 +1,4 @@
 <?php
-	class database_mapper {
-		private $db;
-		private $pdo;
-
-		public function __construct($pdo) {
-			$this->db = new NotORM($pdo);
-			$this->pdo = $pdo;
-		}
-
-		public function getAccounts() {
-			$accounts = array();
-			foreach ($this->db->accounts as $row) {
-				$r = iterator_to_array($row);
-				$acct = Account::fromArray($r);
-				$acct->setTransactions($this->getTransactions($acct->getAccountKey()));
-				$accounts[] = $acct;
-			}
-			return $accounts;
-		}
-
-		public function getTransactions($accountKey) {
-			$transactions = array();
-			foreach ($this->db->transactions->where('accountkey',  $accountKey)->order("`time` asc") as $row) {
-				$r = iterator_to_array($row);
-				$t = Transaction::fromArray($r);
-				foreach ($this->db->taggedtransaction->where('transaction',  $t->getHash()) as $tag) {
-					$t->addTag($tag['tag'], $tag['value']);
-				}
-				$t->resetTagsChanged();
-				$transactions[] = $t;
-			}
-			return $transactions;
-		}
-
-		public function getTags() {
-			$q = $this->pdo->query('SELECT t.id AS tagid, c.name AS category, t.tag AS tag FROM tags AS t JOIN categories AS c ON t.category = c.id ORDER by c.name ASC, t.tag ASC');
-			$result = $q->fetchAll(PDO::FETCH_ASSOC);
-			return $result;
-		}
-	}
-
 	function parseBool($input) {
 		$in = strtolower($input);
 		return ($in === true || $in == 'true' || $in == '1' || $in == 'on' || $in == 'yes');
@@ -56,6 +15,22 @@
 	function showAlert($message) {
 		global $templateFactory;
 		$templateFactory->get('alert')->setVar('message', $message)->display();
+	}
+
+	function getTagHTML($transaction, $tags) {
+		foreach ($transaction->getTags() as $t) {
+			echo '<span class="label label-success" data-tagid="', $t[0], '">';
+			echo $tags[$t[0]], ' (', money_format('%.2n', $t[1]), ')';
+			echo '</span>&nbsp;';
+		}
+
+		$remaining = abs($transaction->getAmount()) - $transaction->getTagValue();
+		if ($remaining > 0) {
+			echo '<span class="label label-danger" data-remaining="', $remaining, '">';
+			echo 'Untagged (', money_format('%.2n', $remaining), ')';
+			echo '</span>&nbsp;';
+		}
+
 	}
 
 	/**

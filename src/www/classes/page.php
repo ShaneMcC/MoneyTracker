@@ -75,52 +75,63 @@
 		public function displayPage() { }
 
 		/**
+		 * If this returns false, no chrome will be shown.
+		 */
+		public function showChrome() { return true; }
+
+		/**
 		 * This method is called to show the page.
 		 */
 		public final function display() {
 			if ($this->init()) { return; }
 			if ($this->doHeaders() === false) { return; }
 
-			$this->tf()->get('header')->display();
+			$showChrome = $this->showChrome();
 
-			// How many grids wide is the sidebar?
-			$sidebarWidth = $this->tf()->getVar('sidebarWidth', 3);
+			if ($showChrome) {
+				$this->tf()->get('header')->display();
 
-			// Forced sizes?
-			$forceSize = $this->tf()->getVar('fluid', false);
+				// How many grids wide is the sidebar?
+				$sidebarWidth = $this->tf()->getVar('sidebarWidth', 3);
 
-			// TODO: This bit needs to be templated better.
-			if (session::isLoggedIn() && $this->tf()->getVar('showSidebar', true)) {
-				if ($forceSize) {
-					echo '<div style="width: 270px; float: left">';
+				// Forced sizes?
+				$forceSize = $this->tf()->getVar('fluid', false);
+
+				// TODO: This bit needs to be templated better.
+				if (session::isLoggedIn() && $this->tf()->getVar('showSidebar', true)) {
+					if ($forceSize) {
+						echo '<div style="width: 270px; float: left">';
+					} else {
+						echo '<div class="span' . $sidebarWidth . '">';
+					}
+					$this->tf()->get('sidebar')->display();
+					echo '</div>';
+
+					if ($forceSize) {
+						echo '<div style="margin-left: 300px">';
+					} else {
+						echo '<div class="span' . (12 - $sidebarWidth). '">';
+					}
 				} else {
-					echo '<div class="span' . $sidebarWidth . '">';
+					echo '<div class="span12">';
 				}
-				$this->tf()->get('sidebar')->display();
-				echo '</div>';
 
-				if ($forceSize) {
-					echo '<div style="margin-left: 300px">';
-				} else {
-					echo '<div class="span' . (12 - $sidebarWidth). '">';
+				if (session::exists('message')) {
+					$messages = session::get('message');
+					foreach ($messages as $message) {
+						$this->tf()->get('message')->setVar('message', $message)->display();
+					}
+					session::remove('message');
 				}
-			} else {
-				echo '<div class="span12">';
-			}
-
-			if (session::exists('message')) {
-				$messages = session::get('message');
-				foreach ($messages as $message) {
-					$this->tf()->get('message')->setVar('message', $message)->display();
-				}
-				session::remove('message');
 			}
 
 			$this->displayPage();
 
-			echo '</div>';
+			if ($showChrome) {
+				echo '</div>';
 
-			$this->tf()->get('footer')->display();
+				$this->tf()->get('footer')->display();
+			}
 		}
 
 		/**

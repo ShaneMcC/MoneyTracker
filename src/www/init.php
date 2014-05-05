@@ -27,4 +27,7 @@
 	// Additional Classes
 	//-----------------------------------------------------------------------
 	require_once(dirname(__FILE__) . '/classes/session.php');
+	require_once(dirname(__FILE__) . '/classes/database.php');
+
+	$db = new Database(getPDO($config['database']));
 ?>

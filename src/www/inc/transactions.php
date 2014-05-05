@@ -8,13 +8,12 @@
 
 		/** {@inheritDoc} */
 		public function displayPage() {
-			global $config;
-			$dbmap = new database_mapper(getPDO($config['database']));
+			$dbmap = $this->tf()->getVar('db', null);
 			$accounts = $dbmap->getAccounts();
 
 			$tags = array();
 			$jsontags = array();
-			foreach ($dbmap->getTags() as $t) {
+			foreach ($dbmap->getAllTags() as $t) {
 				$tags[$t['tagid']] = $t['category'] . ' :: ' . $t['tag'];
 				$jsontags[$t['category']][$t['tag']] = $t['tagid'];
 			}

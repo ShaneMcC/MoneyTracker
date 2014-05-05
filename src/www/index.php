@@ -69,6 +69,7 @@
 	// There is no concept of users in this app.
 	session::setCurrentUser(true);
 
+	$templateFactory->setVar('db', $db);
 	$templateFactory->setVar('sidebar', $sidebar);
 	$templateFactory->setVar('fluid', session::get('fluid', false));
 	$templateFactory->setVar('showSidebar', count($sidebar) > 0);
@@ -96,5 +97,6 @@
 	} */
 
 	// And display the page.
+
 	$page->display();
 ?>
