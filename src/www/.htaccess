@@ -17,10 +17,10 @@ RewriteRule ^(templates_c|classes|inc)(/.*)?$ index.php?p=error404 [L]
 # 404 Handler for files in allowed direcories
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{SCRIPT_FILENAME} !-d
-RewriteRule ^(bootstrap|templates|images)/.*$ index.php?p=error404 [L]
+RewriteRule ^(bootstrap|templates|images|js)/.*$ index.php?p=error404 [L]
 
 # Allowed Files
-RewriteRule ^(bootstrap|templates|images)/.*$ - [L]
+RewriteRule ^(bootstrap|templates|images|js)/.*$ - [L]
 RewriteRule ^(debug|index).php$ - [L]
 
 # Everything Else

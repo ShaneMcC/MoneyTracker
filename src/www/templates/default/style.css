@@ -344,6 +344,17 @@ div.controls p {
   background-color: #e5e5e5;
 }
 
-.glyphicon {
+.nav-list .glyphicon {
 	color: #000;
+}
+
+.container-fluid .row {
+	margin-left: 0px;
+	margin-right: 0px;
+}
+
+#sidebardiv {
+  position: absolute;
+  top: auto;
+  width: 280px;
 }

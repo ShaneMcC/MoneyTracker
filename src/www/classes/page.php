@@ -95,26 +95,30 @@
 				$sidebarWidth = $this->tf()->getVar('sidebarWidth', 3);
 
 				// Forced sizes?
-				$forceSize = $this->tf()->getVar('fluid', false);
+				$fluid = $this->tf()->getVar('fluid', false);
+
 
 				// TODO: This bit needs to be templated better.
 				if (session::isLoggedIn() && $this->tf()->getVar('showSidebar', true)) {
-					if ($forceSize) {
+					if ($fluid) {
 						echo '<div style="width: 270px; float: left">';
 					} else {
-						echo '<div class="span' . $sidebarWidth . '">';
+						echo '<div class="col-sm-' . $sidebarWidth . '">';
 					}
 					$this->tf()->get('sidebar')->display();
 					echo '</div>';
 
-					if ($forceSize) {
+					if ($fluid) {
 						echo '<div style="margin-left: 300px">';
 					} else {
-						echo '<div class="span' . (12 - $sidebarWidth). '">';
+						echo '<div class="col-sm-' . (12 - $sidebarWidth). '">';
 					}
 				} else {
-					echo '<div class="span12">';
+					echo '<div class="col-sm-12">';
 				}
+
+				echo '<div class="', ($fluid ? 'container-fluid' : 'container'), '" role="main">';
+				echo '<div class="row">';
 
 				if (session::exists('message')) {
 					$messages = session::get('message');
@@ -128,6 +132,8 @@
 			$this->displayPage();
 
 			if ($showChrome) {
+				echo '</div>';
+				echo '</div>';
 				echo '</div>';
 
 				$this->tf()->get('footer')->display();

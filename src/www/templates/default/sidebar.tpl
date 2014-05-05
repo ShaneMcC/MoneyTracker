@@ -1,4 +1,5 @@
-<div class="well" style="padding: 8px 0;">
+
+<div id="sidebardiv" class="well" style="padding: 8px 0;">
 <ul id="sidebar" class="nav nav-list">
 
 {-- This is quite PHP-y, but oh well... --}

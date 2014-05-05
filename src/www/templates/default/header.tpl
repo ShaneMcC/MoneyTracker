@@ -20,6 +20,8 @@
 	<script src="{[getWebLocation]}bootstrap/js/jquery.js"></script>
 	<script src="{[getWebLocation]}bootstrap/js/bootstrap.min.js"></script>
 
+	<script src="{[getWebLocation]}js/bootbox.min.js"></script>
+
     <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
@@ -45,10 +47,11 @@
 					<ul class="nav navbar-nav">
 						<li {[ca('page', 'home')]}><a href="{[getWebLocation]}">Home</a></li>
 						<li {[ca('page', 'transactions')]}><a href="{[getWebLocation]}transactions">Transactions</a></li>
+						<li {[ca('page', 'tags')]}><a href="{[getWebLocation]}tags">Tags</a></li>
 					</ul>
 				</div>
 			</div>
 		</div>
 
-	<div class="{{$fluid ? 'container-fluid' : 'container'}}" role="main">
-		<div class="{{$fluid ? 'row-fluid' : 'row'}}">
+		<div class="{{$fluid ? 'container-fluid' : 'container'}}" role="main">
+			<div class="row">

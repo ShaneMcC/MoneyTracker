@@ -67,10 +67,14 @@
 			}
 		}
 
-		public function getAllTags() {
-			$q = $this->pdo->query('SELECT t.id AS tagid, c.name AS category, t.tag AS tag FROM tags AS t JOIN categories AS c ON t.category = c.id ORDER by c.name ASC, t.tag ASC');
+		public function getAllTags($includeEmptyCategories = FALSE) {
+			$q = $this->pdo->query('SELECT t.id AS tagid, c.name AS category, c.id AS categoryid, t.tag AS tag FROM tags AS t '.($includeEmptyCategories ? 'RIGHT' : '').' JOIN categories AS c ON t.category = c.id ORDER by c.name ASC, t.tag ASC');
 			$result = $q->fetchAll(PDO::FETCH_ASSOC);
 			return $result;
+		}
+
+		public function getDB() {
+			return $this->db;
 		}
 	}
 ?>

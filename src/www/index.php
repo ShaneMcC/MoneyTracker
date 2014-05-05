@@ -61,6 +61,7 @@
 
 	$section = array('__HEADER__' => 'Money Management');
 	$section[] = array('Title' => 'Transactions', 'Icon' => 'globe', 'Link' => page::getWebLocation() . 'transactions', 'Active' => ($inc == 'transactions'));
+	$section[] = array('Title' => 'Tags', 'Icon' => 'globe', 'Link' => page::getWebLocation() . 'tags', 'Active' => ($inc == 'tags'));
 	$sidebar[] = $section;
 
 	// Fluid Theme
