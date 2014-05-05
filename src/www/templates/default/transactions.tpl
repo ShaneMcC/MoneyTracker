@@ -100,8 +100,11 @@
 						<!-- Text input-->
 						<div class="form-group">
 							<label class="col-md-4 control-label" for="value">Value</label>
-							<div class="col-md-2">
-								<input name="value" type="text" placeholder="" class="form-control input-md">
+							<div class="col-md-5">
+								<div class="input-group">
+									<span class="input-group-addon">&pound;</span>
+									<input name="value" type="text" placeholder="" class="form-control input-md">
+								</div>
 							</div>
 						</div>
 
@@ -138,7 +141,7 @@
 	function addTag(clickedTag) {
 		transid = $(clickedTag).parent().parent().attr('data-id');
 		description = $('td.description span', $(clickedTag).closest('tr')).text();
-		remaining = $(clickedTag).attr('data-remaining');
+		remaining = parseFloat($(clickedTag).attr('data-remaining')).toFixed(2);
 
 		$('#addTagForm input[name="transaction"]').val(transid);
 		$('#addTagForm input[name="description"]').val(description);
