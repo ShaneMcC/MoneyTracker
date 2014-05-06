@@ -21,6 +21,7 @@ RewriteRule ^(bootstrap|templates|images|js)/.*$ index.php?p=error404 [L]
 
 # Allowed Files
 RewriteRule ^(bootstrap|templates|images|js)/.*$ - [L]
+RewriteRule ^(3rdparty)/.*(js|css)$ - [L]
 RewriteRule ^(debug|index).php$ - [L]
 
 # Everything Else

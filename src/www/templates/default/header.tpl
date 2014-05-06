@@ -9,18 +9,25 @@
 
 	{-- <link href="http://fonts.googleapis.com/css?family=Open+Sans:400italic,600italic,400,600" rel="stylesheet"> --}
 
-	<!-- Bootstrap -  http://twitter.github.com/bootstrap/index.html -->
+	<!-- jQuery - http://jquery.com/ -->
+	<script src="{[getWebLocation]}bootstrap/js/jquery.js"></script>
+
+	<!-- Bootstrap -  http://getbootstrap.com/ -->
 	<!-- Using Icons from GlyphIcons - http://glyphicons.com/ -->
 	<link href="{[getWebLocation]}bootstrap/css/bootstrap.min.css" rel="stylesheet">
 	<link href="{[getWebLocation]}bootstrap/css/bootstrap-theme.min.css" rel="stylesheet">
-
-	<link href="{[getWebLocation('style.css')]}" rel="stylesheet">
-	<link href="{[getWebLocation('style-local.css')]}" rel="stylesheet">
-
-	<script src="{[getWebLocation]}bootstrap/js/jquery.js"></script>
 	<script src="{[getWebLocation]}bootstrap/js/bootstrap.min.js"></script>
 
-	<script src="{[getWebLocation]}js/bootbox.min.js"></script>
+	<!-- Bootbox - http://bootboxjs.com/ -->
+	<script src="{[getWebLocation]}3rdparty/bootbox/bootbox.js"></script>
+
+	<!-- Bootstrap-Sortable - https://github.com/drvic10k/bootstrap-sortable -->
+	<script src="{[getWebLocation]}3rdparty/bootstrap-sortable/Scripts/bootstrap-sortable.js"></script>
+	<link href="{[getWebLocation]}3rdparty/bootstrap-sortable/Contents/bootstrap-sortable.css" rel="stylesheet">
+
+	<!-- Local CSS -->
+	<link href="{[getWebLocation('style.css')]}" rel="stylesheet">
+	<link href="{[getWebLocation('style-local.css')]}" rel="stylesheet">
 
     <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
     <!--[if lt IE 9]>
@@ -30,7 +37,6 @@
 
 	</head>
 	<body role="document">
-
 		<!-- Fixed navbar -->
 		<div class="navbar navbar-default navbar-fixed-top" role="navigation">
 			<div class="{{$fluid ? 'container-fluid' : 'container'}}">

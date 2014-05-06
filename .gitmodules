@@ -13,3 +13,9 @@
 [submodule "src/www/bootstrap"]
 	path = src/www/bootstrap
 	url = https://github.com/ShaneMcC/Bootstrap
+[submodule "src/www/3rdparty/bootstrap-sortable"]
+	path = src/www/3rdparty/bootstrap-sortable
+	url = https://github.com/drvic10k/bootstrap-sortable
+[submodule "src/www/3rdparty/bootbox"]
+	path = src/www/3rdparty/bootbox
+	url = https://github.com/makeusabrew/bootbox.git

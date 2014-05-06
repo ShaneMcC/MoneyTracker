@@ -2,7 +2,8 @@
 		<h1>{{$account->getFullNumber()}}</h1>
 
 		<div class="table-responsive">
-		<table class="table table-striped table-bordered table-hover table-condensed transactions">
+		<table class="table table-striped table-bordered table-hover table-condensed transactions sortable">
+		<thead>
 		<tr>
 		<th class="date">Date</th>
 		<th class="typecode">Type</th>
@@ -12,7 +13,9 @@
 		{-- <th class="hash">Hash</th> --}
 		<th class="transactiontags">Tags</th>
 		</tr>
+		</thead>
 
+		<tbody>
 		@$lastBalance = null;
 		@$cutoff = strtotime("01 jan 2014");
 		@foreach ($account->getTransactions() as $transaction) {
@@ -46,6 +49,7 @@
 
 			@$lastBalance = $transaction->getBalance();
 		@}
+		</tbody>
 
 		</table>
 		</div>
@@ -129,7 +133,10 @@
 </div>
 
 <script>
-    $('td span').tooltip();
+	$(function() {
+    	$('td span').tooltip();
+    	$.bootstrapSortable(true, 'reversed');
+	});
 
 	function addTag(clickedTag) {
 		transid = $(clickedTag).parent().parent().attr('data-id');
