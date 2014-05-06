@@ -18,7 +18,7 @@
 		@foreach ($account->getTransactions() as $transaction) {
 			@if ($transaction->getTime() < $cutoff) { continue; }
 			<tr>
-			<td class="date" data-time="{{$transaction->getTime()}}">{{date("Y-m-d H:i:s", $transaction->getTime())}}</td>
+			<td class="date" data-value="{{$transaction->getTime()}}">{{date("Y-m-d H:i:s", $transaction->getTime())}}</td>
 			<td class="typecode"><span data-toggle="tooltip" title="{{$transaction->getType()}}">{{$transaction->getTypeCode()}}</span></td>
 			<td class="description"><span data-toggle="tooltip" title="{{$transaction->getHash()}}">{{$transaction->getDescription()}}</span></td>
 			<td class="amount">{{money_format('%.2n', $transaction->getAmount())}}</td>
@@ -131,24 +131,9 @@
 <script>
     $('td span').tooltip();
 
-	var tags = <?=json_encode($jsontags);?>
-
-	function createDropDown(selected) {
-		var s = $("<select name=\"tag[]\" />");
-		$.each(tags, function(group, grouptags) {
-			var g = $('<optGroup/>').attr('label', group).appendTo(s);
-			$.each(grouptags, function(tag, id) {
-				var o = $('<option/>').val(id).text(tag);
-				o.appendTo(g);
-			});
-		});
-
-		return s;
-	}
-
 	function addTag(clickedTag) {
 		transid = $(clickedTag).parent().parent().attr('data-id');
-		date = parseInt($('td.date', $(clickedTag).closest('tr')).attr('data-time') + '000');
+		date = parseInt($('td.date', $(clickedTag).closest('tr')).attr('data-value') + '000');
 		date = new Date(date).toUTCString();
 		description = $('td.description span', $(clickedTag).closest('tr')).text();
 		remaining = parseFloat($(clickedTag).attr('data-remaining')).toFixed(2);
@@ -180,6 +165,12 @@
 
 	$('td.transactiontags div.tagtext').on('click', 'span.label-danger', function() {
 		addTag(this);
+	});
+
+	$('#addTagModal').keydown(function(e) {
+		if (e.which == '13') {
+			$('#saveTag').click();
+		}
 	});
 
 	$('#saveTag').click(function() {

@@ -5,6 +5,8 @@
 	require_once(dirname(__FILE__) . '/Account.php');
 	require_once(dirname(__FILE__) . '/Transaction.php');
 	require_once(dirname(__FILE__) . '/banks/HSBC.php');
+	require_once(dirname(__FILE__) . '/banks/HSBCMobile.php');
+	require_once(dirname(__FILE__) . '/banks/HSBCMerge.php');
 	require_once(dirname(__FILE__) . '/banks/Halifax.php');
 	require_once(dirname(__FILE__) . '/banks/TescoBank.php');
 
@@ -25,7 +27,7 @@
 
 	// Bank object(s) used for updates.
 	$config['bank'] = array();
-	$config['bank'][] = new HSBC('IB123456789', '010101', '12345678');
+	$config['bank'][] = new HSBC('IB123456789', '010101', '##');
 
 	if (file_exists(dirname(__FILE__) . '/config.user.php')) {
 		require_once(dirname(__FILE__) . '/config.user.php');

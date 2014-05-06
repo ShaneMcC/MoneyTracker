@@ -28,7 +28,7 @@
 		echo '<th>Description</th>';
 		echo '<th>Amount</th>';
 		echo '<th>Balance</th>';
-		// echo '<th>Hash</th>';
+		echo '<th>Hash</th>';
 		echo '<th>Tags</th>';
 		echo '</tr>';
 
@@ -42,7 +42,7 @@
 			echo '<td>', $transaction->getDescription(), '</td>';
 			echo '<td>', money_format('%.2n', $transaction->getAmount()), '</td>';
 			echo '<td>', money_format('%.2n', $transaction->getBalance()), '</td>';
-			// echo '<td>', $transaction->getHash(), '</td>';
+			echo '<td>', $transaction->getHash(), '</td>';
 			echo '<td class="transactiontags" data-tags="', htmlspecialchars(json_encode($transaction->getTags())), '" data-id="', $transaction->getHash(), '" id="tags-', $transaction->getHash(), '">';
 			echo '<div class="tagtext">';
 			$a = array();
@@ -51,7 +51,6 @@
 			}
 			echo '[', implode(', ', $a), ']';
 			echo '</div>';
-			echo '<div class="tagselect" />';
 			echo '</td>';
 			echo '</tr>';
 
@@ -74,39 +73,3 @@
 		echo '</table>';
 	}
 ?>
-
-<script src="https://code.jquery.com/jquery-2.1.0.min.js"></script>
-<script>
-	var tags = <?=json_encode($jsontags);?>
-
-	function createDropDown(selected) {
-		var s = $("<select name=\"tag[]\" />");
-		$.each(tags, function(group, grouptags) {
-			var g = $('<optGroup/>').attr('label', group).appendTo(s);
-			$.each(grouptags, function(tag, id) {
-				var o = $('<option/>').val(id).text(tag);
-				o.appendTo(g);
-			});
-		});
-
-		return s;
-	}
-
-	$('td.transactiontags div.tagtext').click(function() {
-		$(this).hide();
-		var parent = $(this).parent();
-
-		currentTags = jQuery.parseJSON(parent.attr('data-tags'));
-		hash = parent.attr('data-id');
-
-		var selectDiv = $('div.tagselect', parent);
-
-		$.each(currentTags, function() {
-			id = this[0];
-			value = this[1];
-			createDropDown(id).appendTo(selectDiv);
-		});
-
-		selectDiv.show();
-	});
-</script>

@@ -95,10 +95,6 @@
 			$obj->myExtra = $array['extra'];
 			$obj->mySource = $array['source'];
 
-			if ($obj->getHash() != $array['hash']) {
-				echo '<strong>Error: </strong> ', $obj->getHash(), ' != ', $array['hash'], '<br>';
-			}
-
 			return $obj;
 		}
 
@@ -121,16 +117,14 @@
 		// will return a duplicate. :(
 		// But hopefully that won't ever happen!
 		// If only we could get transaction times or something aswell as dates :(
-		function getHash() {
+		function getHash($includeTypeCode = false) {
 			return sprintf('%s-%u-%u-%s-%s-%s', $this->getAccountKey(),
 			                                 $this->getTime(),
 			                                 crc32($this->getDescription()),
-			                                 $this->getTypeCode(),
+			                                 ($includeTypeCode ? $this->getTypeCode() : ($this->getAmount() < 0 ? 'OUT' : 'IN')),
 			                                 str_replace('-', 'N', sprintf('%01.2f', $this->getAmount())),
 			                                 str_replace('-', 'N', sprintf('%01.2f', $this->getBalance()))
 			                                 );
-
-			$trans = new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['description'], $transaction['amount'], $transaction['balance']);
 		}
 	}
 ?>

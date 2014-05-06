@@ -71,11 +71,24 @@
 
 					// I forget the purpose of the "Historical Overlap" stuff...
 					// if (!$isHistoricalOverlap) {
-						$result = $this->db->transactions->insert($transData);
+						// $result = $this->db->transactions->insert($transData);
+						// Data for update.
+						$key = $transData['hash'];
+						unset($transData['hash']);
+						$updateData = $transData;
+
+						$genericType = ($transData['typecode'][0] == '*');
+						if ($genericType) {
+							$transData['typecode'] = ltrim($transData['typecode'], '*');
+							unset($updateData['typecode']);
+							unset($updateData['type']);
+						}
+
+						$result = $this->db->transactions->insert_update(array('hash' => $key), $transData, $updateData);
 						if ($result == false) {
-							echo 'Failed to insert: ', $transData['description'], ' => ', $transData['amount'], ' (', date("Y-m-d H:i:s", $transData['time']),')', "\n";
+							echo 'Failed to update: ', $transData['description'], ' [', $transData['typecode'], '] => ', $transData['amount'], ' (', date("Y-m-d H:i:s", $transData['time']),')', "\n";
 						} else {
-							echo 'Inserted: ', $transData['description'], ' => ', $transData['amount'], ' (', date("Y-m-d H:i:s", $transData['time']),')', "\n";
+							echo 'Inserted/Updated: ', $transData['description'], ' [', $transData['typecode'], '] => ', $transData['amount'], ' (', date("Y-m-d H:i:s", $transData['time']),')', "\n";
 						}
 					// }
 

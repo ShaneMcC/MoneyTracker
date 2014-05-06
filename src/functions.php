@@ -33,5 +33,9 @@
 		return trim($line);
 	}
 
+	function endsWith($haystack, $needle) {
+	    return $needle === "" || substr($haystack, -strlen($needle)) === $needle;
+	}
+
 	date_default_timezone_set(@date_default_timezone_get());
 ?>

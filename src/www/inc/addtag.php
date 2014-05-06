@@ -20,7 +20,6 @@
 
 			$tags = array();
 			foreach ($dbmap->getAllTags() as $t) {
-				if ($t['tagid'] == null) { continue; }
 				$tags[$t['tagid']] = $t['category'] . ' :: ' . $t['tag'];
 			}
 

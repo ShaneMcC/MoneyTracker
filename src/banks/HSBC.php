@@ -170,7 +170,7 @@
 				$account->setType($type);
 				$account->setOwner($owner);
 				if (!isset($number[1])) {
-					$account->setSortCode('');
+					$account->setSortCode('00-00-02');
 					$account->setAccountNumber($number[0]);
 				} else {
 					$account->setSortCode($number[0]);
