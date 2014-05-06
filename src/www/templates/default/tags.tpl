@@ -40,8 +40,8 @@
 	$('.deleteTag').click(function() {
 		tagid = $(this).attr('data-tagid');
 		bootbox.confirm({title: "Are you sure you want to delete this tag?",
-			             message: "Deleting this tag will untag any transactions that were tagged with it.",
-			             callback: function(result) {
+		                 message: "Deleting this tag will untag any transactions that were tagged with it.",
+		                 callback: function(result) {
 			if (result) {
 				$('#doTagAction input[name="tagaction_action"]').val('deleteTag');
 				$('#doTagAction input[name="tagaction_id"]').val(tagid);
@@ -56,8 +56,8 @@
 		oldName = $(this).attr('data-tagname');
 
 		bootbox.prompt({title: "New name for Tag",
-			            value: oldName,
-			            callback: function(result) {
+		                value: oldName,
+		                callback: function(result) {
 			if (result !== null && result.length > 0) {
 				$('#doTagAction input[name="tagaction_action"]').val('editTag');
 				$('#doTagAction input[name="tagaction_id"]').val(tagid);
@@ -71,7 +71,7 @@
 		categoryid = $(this).attr('data-categoryid');
 
 		bootbox.prompt({title: "Add new tag",
-			            callback: function(result) {
+		                callback: function(result) {
 			if (result !== null && result.length > 0) {
 				$('#doTagAction input[name="tagaction_action"]').val('addTag');
 				$('#doTagAction input[name="tagaction_id"]').val(categoryid);
@@ -86,8 +86,8 @@
 	$('.deleteCategory').click(function() {
 		catid = $(this).attr('data-categoryid');
 		bootbox.confirm({title: "Are you sure you want to delete this category?",
-			             message: "Deleting this category will also delete all it's tags",
-			             callback: function(result) {
+		                 message: "Deleting this category will also delete all it's tags",
+		                 callback: function(result) {
 			if (result) {
 				$('#doTagAction input[name="tagaction_action"]').val('deleteCategory');
 				$('#doTagAction input[name="tagaction_id"]').val(catid);
@@ -102,8 +102,8 @@
 		oldName = $(this).attr('data-catname');
 
 		bootbox.prompt({title: "New name for category",
-			            value: oldName,
-			            callback: function(result) {
+		                value: oldName,
+		                callback: function(result) {
 			if (result !== null && result.length > 0) {
 				$('#doTagAction input[name="tagaction_action"]').val('editCategory');
 				$('#doTagAction input[name="tagaction_id"]').val(catid);
@@ -115,7 +115,7 @@
 
 	$('.addCategory').click(function() {
 		bootbox.prompt({title: "Add new category",
-			            callback: function(result) {
+		                callback: function(result) {
 			if (result !== null && result.length > 0) {
 				$('#doTagAction input[name="tagaction_action"]').val('addCategory');
 				$('#doTagAction input[name="tagaction_id"]').val('');

@@ -134,8 +134,8 @@
 
 <script>
 	$(function() {
-    	$('td span').tooltip();
-    	$.bootstrapSortable(true, 'reversed');
+		$('td span').tooltip();
+		$.bootstrapSortable(true, 'reversed');
 	});
 
 	function addTag(clickedTag) {
@@ -195,7 +195,7 @@
 			type: 'POST',
 			data: {transaction: transid, tagid: tagid, value: value},
 		}).done(function(data) {
-		  	$('div.tagtext', parentElement).html(data);
+			$('div.tagtext', parentElement).html(data);
 		});
 	});
 </script>
