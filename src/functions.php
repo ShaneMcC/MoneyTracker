@@ -25,6 +25,8 @@
 	 * @param $prompt Prompt to show.
 	 */
 	function getUserInput($prompt) {
+		if (!posix_isatty(STDIN)) { return ''; }
+
 		echo $prompt;
 
 		$handle = fopen('php://stdin', 'r');
