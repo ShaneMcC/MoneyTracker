@@ -60,8 +60,15 @@
 	$sidebar[] = $section;
 
 	$section = array('__HEADER__' => 'Money Management');
-	$section[] = array('Title' => 'Transactions', 'Icon' => 'globe', 'Link' => page::getWebLocation() . 'transactions', 'Active' => ($inc == 'transactions'));
-	$section[] = array('Title' => 'Tags', 'Icon' => 'globe', 'Link' => page::getWebLocation() . 'tags', 'Active' => ($inc == 'tags'));
+	$section[] = array('Title' => 'Transactions', 'Icon' => 'transfer', 'Link' => page::getWebLocation() . 'transactions', 'Active' => ($inc == 'transactions'));
+	$section[] = array('Title' => 'Tags', 'Icon' => 'tasks', 'Link' => page::getWebLocation() . 'tags', 'Active' => ($inc == 'tags'));
+	$section[] = array('Title' => 'Data', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data', 'Active' => ($inc == 'data'));
+	$section[] = array('Title' => 'This month', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=this', 'Margin' => 20);
+	$section[] = array('Title' => 'Last month', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=last', 'Margin' => 20);
+	$section[] = array('Title' => 'Last 2 months', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=last2', 'Margin' => 20);
+	$section[] = array('Title' => 'Last 3 months', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=last3', 'Margin' => 20);
+	$section[] = array('Title' => '2 months ago', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=2last', 'Margin' => 20);
+	$section[] = array('Title' => '3 months ago', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=3last', 'Margin' => 20);
 	$sidebar[] = $section;
 
 	// Fluid Theme

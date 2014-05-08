@@ -17,6 +17,8 @@
 			if ($tagAction !== false) {
 	 			if ($tagAction == 'editTag') {
 					$dbmap->getDB()->tags->where('id', $tagActionID)->update(array('tag' => $tagActionValue));
+				} else if ($tagAction == 'setIgnore') {
+					$dbmap->getDB()->tags->where('id', $tagActionID)->update(array('`ignore`' => ($tagActionValue ? 1 : 0)));
 				} else if ($tagAction == 'deleteTag') {
 					$dbmap->getDB()->tags->where('id', $tagActionID)->delete();
 				} else if ($tagAction == 'addTag') {
@@ -40,7 +42,7 @@
 			$tags = array();
 			foreach ($dbmap->getAllTags(true) as $t) {
 				if ($t['tagid'] != null) {
-					$tags[$t['categoryid']]['tags'][$t['tag']] = $t['tagid'];
+					$tags[$t['categoryid']]['tags'][$t['tag']] = $t;
 				} else {
 					$tags[$t['categoryid']]['tags'] = array();
 				}

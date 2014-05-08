@@ -54,6 +54,7 @@
 						<li {[ca('page', 'home')]}><a href="{[getWebLocation]}">Home</a></li>
 						<li {[ca('page', 'transactions')]}><a href="{[getWebLocation]}transactions">Transactions</a></li>
 						<li {[ca('page', 'tags')]}><a href="{[getWebLocation]}tags">Tags</a></li>
+						<li {[ca('page', 'data')]}><a href="{[getWebLocation]}data">Data</a></li>
 					</ul>
 				</div>
 			</div>
