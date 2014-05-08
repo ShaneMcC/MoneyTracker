@@ -41,6 +41,10 @@
 				$period = 'Last 3 months';
 				$start = mktime(0, 0, 0, date("m")-3, 1, date("Y"));
 				$end = mktime(0, 0, 0, date("m"), 1, date("Y"));
+			} else if (isset($params['period']) && $params['period'] == 'thisyear') {
+				$period = 'This year';
+				$start = mktime(0, 0, 0, 1, 1, date("Y"));
+				$end = mktime(0, 0, 0, date("m"), 1, date("Y"));
 			} else {
 				$period = 'Last 7 days';
 				$start = strtotime('-7 days 00:00:00');
@@ -51,7 +55,6 @@
 			$this->tf()->setVar('end', $end);
 			$this->tf()->setVar('period', $period);
 			$t->start($start)->end($end);
-
 
 			$t2 = clone $t;
 			$this->tf()->setVar('incoming', $t->incoming()->get());
