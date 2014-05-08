@@ -13,7 +13,7 @@
 				@if ($key === '__HEADER__') { continue; }
 				@if (!isset($item['icon'])) { $item['icon'] = 'none'; }
 				@$class = array();
-				@if (isset($item['Active']) && $item['Active']) { $class[] = 'active'; }
+				@if (isset($item['Active']) && $item['Active']) { $class[] = 'active'; } else if ($_SERVER['REQUEST_URI'] == $item['Link']) { $class[] = 'active'; }
 				@$class = implode(' ', $class);
 
 				@$margin = 15 + (isset($item['Margin']) ? (int)$item['Margin'] : 0);

@@ -20,9 +20,13 @@ function drawCharts() {
 }
 </script>
 
-Incoming Total: {{money_format('%.2n', $intotal)}} <br>
-Outgoing Total: {{money_format('%.2n', $outtotal)}} <br>
-Final: {{money_format('%.2n', $intotal - $outtotal)}} <br>
+<div class="bs-callout-info">
+<strong>Incoming Total:</strong> {{money_format('%.2n', $intotal)}}
+</div>
+<div class="bs-callout-info">
+<strong>Outgoing Total:</strong> {{money_format('%.2n', $outtotal)}}
+</div>
+<div class="{{ $intotal < $outtotal ? 'bs-callout-danger' : 'bs-callout-success' }}"><strong>Final:</strong> {{money_format('%.2n', $intotal - $outtotal)}}</div>
 
 <div id="incoming" style="width: 900px; height: 500px;"></div>
 <div id="outgoing" style="width: 900px; height: 500px;"></div>

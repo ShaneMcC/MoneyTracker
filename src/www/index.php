@@ -54,21 +54,22 @@
 
 	// Prepare the sidebar menu.
 	$sidebar = array();
-	$section = array('__HEADER__' => 'Site Tools');
+	$section = array('__HEADER__' => 'Site');
 	$section[] = array('Title' => 'Home', 'Icon' => 'home', 'Link' => page::getWebLocation() . 'home', 'Active' => ($inc == 'home'));
-	$section[] = array('Title' => 'Debug Page', 'Icon' => 'warning-sign', 'Link' => page::getWebLocation() . 'debug.php');
-	$sidebar[] = $section;
-
-	$section = array('__HEADER__' => 'Money Management');
+	// $section[] = array('Title' => 'Debug Page', 'Icon' => 'warning-sign', 'Link' => page::getWebLocation() . 'debug.php');
 	$section[] = array('Title' => 'Transactions', 'Icon' => 'transfer', 'Link' => page::getWebLocation() . 'transactions', 'Active' => ($inc == 'transactions'));
 	$section[] = array('Title' => 'Tags', 'Icon' => 'tasks', 'Link' => page::getWebLocation() . 'tags', 'Active' => ($inc == 'tags'));
-	$section[] = array('Title' => 'Data', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data', 'Active' => ($inc == 'data'));
-	$section[] = array('Title' => 'This month', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=this', 'Margin' => 20);
-	$section[] = array('Title' => 'Last month', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=last', 'Margin' => 20);
-	$section[] = array('Title' => 'Last 2 months', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=last2', 'Margin' => 20);
-	$section[] = array('Title' => 'Last 3 months', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=last3', 'Margin' => 20);
-	$section[] = array('Title' => '2 months ago', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=2last', 'Margin' => 20);
-	$section[] = array('Title' => '3 months ago', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=3last', 'Margin' => 20);
+	$sidebar[] = $section;
+
+	$section = array('__HEADER__' => 'Data');
+	// $section[] = array('Title' => 'Data', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data', 'Active' => ($inc == 'data'));
+	$section[] = array('Title' => 'Last 7 days', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data');
+	$section[] = array('Title' => 'This month', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=this');
+	$section[] = array('Title' => 'Last month', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=last');
+	$section[] = array('Title' => 'Last 2 months', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=last2');
+	$section[] = array('Title' => 'Last 3 months', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=last3');
+	$section[] = array('Title' => '2 months ago', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=2last');
+	$section[] = array('Title' => '3 months ago', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=3last');
 	$sidebar[] = $section;
 
 	// Fluid Theme
