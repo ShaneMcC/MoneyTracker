@@ -92,6 +92,10 @@
 		function getExtra() { return $this->myExtra; }
 		function getSource() { return $this->mySource; }
 
+		function getDisplayName() {
+			return (!startsWith($this->mySortCode, '00-') ? $this->mySortCode.' ' : '') . $this->myAccountNumber;
+		}
+
 		function setOwner($newValue) { $this->myOwner = $newValue; }
 		function setType($newValue) { $this->myType = $newValue; }
 		function setSortCode($newValue) { $this->mySortCode = $newValue; }

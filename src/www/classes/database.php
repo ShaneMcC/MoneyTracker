@@ -8,15 +8,27 @@
 			$this->pdo = $pdo;
 		}
 
-		public function getAccounts() {
+		public function getAccounts($includeTransactions = true) {
 			$accounts = array();
 			foreach ($this->db->accounts as $row) {
 				$r = iterator_to_array($row);
 				$acct = Account::fromArray($r);
-				$acct->setTransactions($this->getTransactions($acct->getAccountKey()));
+				if ($includeTransactions) {
+					$acct->setTransactions($this->getTransactions($acct->getAccountKey()));
+				}
 				$accounts[] = $acct;
 			}
 			return $accounts;
+		}
+
+		public function getAccount($key) {
+			foreach ($this->db->accounts->where('accountkey', $key) as $row) {
+				$r = iterator_to_array($row);
+				$acct = Account::fromArray($r);
+				$acct->setTransactions($this->getTransactions($acct->getAccountKey()));
+				return $acct;
+			}
+			return FALSE;
 		}
 
 		public function getTransactions($accountKey) {

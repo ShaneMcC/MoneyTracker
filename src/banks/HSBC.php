@@ -217,13 +217,13 @@
 			// Get a better date
 			if ($baseYear == '') {
 				// If we have not been given a year, work it out based on the now.
-				$current = strtotime($transaction['date']);
-				$last = strtotime('-1 year', $current);
+				$current = strtotime($transaction['date'] . ' Europe/London');
+				$last = strtotime('-1 year Europe/London', $current);
 				$transaction['date'] = ($current > time()) ? $last : $current;
 			} else {
 				// If we have been given a year, then use it.
-				$current = strtotime($transaction['date']. ' ' . $baseYear);
-				$last = strtotime('-1 year', $current);
+				$current = strtotime($transaction['date']. ' ' . $baseYear . ' Europe/London');
+				$last = strtotime('-1 year Europe/London', $current);
 				$transaction['date'] = ($current > strtotime($maxDate)) ? $last : $current;
 			}
 

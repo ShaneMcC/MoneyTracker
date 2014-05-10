@@ -186,7 +186,8 @@
 		 */
 		private function cleanTransaction($transaction) {
 			// Get a better date
-			$transaction['date'] = strtotime($transaction['date']);
+			$transaction['date'] = strtotime($transaction['date'] . ' Europe/London');
+
 
 			// Rather than separate in/out, lets just have a +/- amount
 			if (!empty($transaction['out'])) {

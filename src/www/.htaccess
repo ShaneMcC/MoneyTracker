@@ -20,7 +20,7 @@ RewriteCond %{SCRIPT_FILENAME} !-d
 RewriteRule ^(bootstrap|templates|images|js)/.*$ index.php?p=error404 [L]
 
 # Allowed Files
-RewriteRule ^(bootstrap|templates|images|js)/.*$ - [L]
+RewriteRule ^(bootstrap|templates|images|js|bankimage)/.*$ - [L]
 RewriteRule ^(3rdparty)/.*(js|css)$ - [L]
 RewriteRule ^(debug|index).php$ - [L]
 

@@ -296,7 +296,7 @@ V8JS
 			// Get a better date
 			$bits = explode('/', $transaction['date']);
 			$transaction['date'] = $bits[1].'/'.$bits[0].'/'.$bits[2];
-			$transaction['date'] = strtotime($transaction['date']);
+			$transaction['date'] = strtotime($transaction['date'] . ' Europe/London');
 
 			// Rather than separate in/out, lets just have a +/- amount
 			if (!empty($transaction['out'])) {

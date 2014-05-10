@@ -422,3 +422,12 @@ table.transactions th.transactiontags, table.transactions td.transactiontags {
 	background-color: #dff0d8;
 	border-color: #d6e9c6;
 }
+
+/**********************************************************************
+ * Home Page
+ **********************************************************************/
+
+img.banklogo {
+	max-width: 100px;
+	max-height: 100px;
+}

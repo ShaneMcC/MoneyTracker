@@ -8,12 +8,18 @@
 
 		/** {@inheritDoc} */
 		public function displayPage() {
-			$dbmap = $this->tf()->getVar('db', null);
-			$accounts = $dbmap->getAccounts();
+			$db = $this->tf()->getVar('db', null);
+
+			$p = $this->getParams();
+			if (isset($p['sub']) && !empty($p['sub'])) {
+				$accounts = array($db->getAccount($p['sub']));
+			} else {
+				$accounts = $db->getAccounts();
+			}
 
 			$tags = array();
 			$jsontags = array();
-			foreach ($dbmap->getAllTags() as $t) {
+			foreach ($db->getAllTags() as $t) {
 				$tags[$t['tagid']] = $t['category'] . ' :: ' . $t['tag'];
 				$jsontags[$t['category']][$t['tag']] = $t['tagid'];
 			}
