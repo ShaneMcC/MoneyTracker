@@ -19,3 +19,6 @@
 [submodule "src/www/3rdparty/bootbox"]
 	path = src/www/3rdparty/bootbox
 	url = https://github.com/makeusabrew/bootbox.git
+[submodule "src/www/3rdparty/jurlp"]
+	path = src/www/3rdparty/jurlp
+	url = https://github.com/tombonner/jurlp

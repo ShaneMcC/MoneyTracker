@@ -1,9 +1,14 @@
 <?php
-	class transactions_page extends page {
+	class taggedtransactions_page extends page {
 
 		/** {@inheritDoc} */
 		public function pageConstructor() {
 			$this->tf()->setVar('title', 'Money Tracker :: Transactions');
+
+			$p = $this->getParams();
+			if (!isset($p['sub']) || empty($p['sub'])) {
+				$this->redirectTo('transactions');
+			}
 		}
 
 		/** {@inheritDoc} */
@@ -11,10 +16,19 @@
 			$db = $this->tf()->getVar('db', null);
 
 			$p = $this->getParams();
-			if (isset($p['sub']) && !empty($p['sub'])) {
-				$accounts = array($db->getAccount($p['sub']));
-			} else {
-				$accounts = $db->getAccounts();
+			$tag = $p['sub'];
+			$accounts = $db->getAccounts();
+			foreach ($accounts as $acct) {
+				$old = $acct->getTransactions();
+				$acct->clearTransactions();
+				foreach ($old as $t) {
+					foreach ($t->getTags() as $ttag) {
+						if ($ttag[0] == $tag) {
+							$acct->addTransaction($t);
+							break;
+						}
+					}
+				}
 			}
 
 			$tags = array();
@@ -27,7 +41,7 @@
 			$this->tf()->setVar('tags', $tags);
 			$this->tf()->setVar('jsontags', $jsontags);
 			$this->tf()->setVar('accounts', $accounts);
-			$this->tf()->setVar('filtered', false);
+			$this->tf()->setVar('filtered', true);
 			$this->tf()->get('transactions')->display();
 		}
 	}

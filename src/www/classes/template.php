@@ -132,20 +132,22 @@
 				//
 				// This is sufficient for now.
 				$contents = preg_replace(
-				            array("/{{(.+?)(`?)}}/",
-				                  "/\[\[/",
-				                  "/\]\]/",
+				            array("/{{(.+?)(`?)}}/", // Echo Variable
+				                  /* "/\[\[/", // Start of PHP Block */
+				                  /* "/\]\]/", // End of PHP Block */
 				                  "/\[{([^(]*)(\((.*)\))?}\]/U",   // [{ }] - eval
 				                  "/{\[([^(]*)(\((.*)\))?\]}/U",   // {[ ]} - eval and echo
 				                  "/({--.*--})/Ums",   // Comment
-				                  '/^\s*@(.*)$/mU'),
+				                  '/^\s*@(.*)$/mU'  // Full-Line PHP
+				                 ),
 				            array("<?php \$this->e(\\1, ('' === '\\2')); ?>",
-				                  "<?php ",
-				                  " ?>",
+				                  /* "<?php ", */
+				                  /* " ?>", */
 				                  "<?php if (method_exists(\$this, '\\1')) { \$this->\\1(\\3); } else { \\1(\\3); } ?>",
 				                  "<?php if (method_exists(\$this, '\\1')) { \$this->e(\$this->\\1(\\3)); } else { \$this->e(\\1(\\3)); } ?>",
 				                  "",
-				                  "<?php \\1 ?>"),
+				                  "<?php \\1 ?>"
+				                 ),
 				            $contents);
 
 				if (@file_put_contents($compiledName, $contents) !== FALSE) {

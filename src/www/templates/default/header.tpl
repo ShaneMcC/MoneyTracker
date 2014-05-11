@@ -25,6 +25,9 @@
 	<script src="{[getWebLocation]}3rdparty/bootstrap-sortable/Scripts/bootstrap-sortable.js"></script>
 	<link href="{[getWebLocation]}3rdparty/bootstrap-sortable/Contents/bootstrap-sortable.css" rel="stylesheet">
 
+	<!-- jURLp - https://github.com/tombonner/jurlp -->
+	<script src="{[getWebLocation]}3rdparty/jurlp/jurlp.js"></script>
+
 	<!-- Local CSS -->
 	<link href="{[getWebLocation('style.css')]}" rel="stylesheet">
 	<link href="{[getWebLocation('style-local.css')]}" rel="stylesheet">

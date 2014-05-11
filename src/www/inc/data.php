@@ -13,43 +13,11 @@
 
 			$params = $this->getQuery();
 
-			if (isset($params['tags'])) { $t->tagOnly(); }
+			if (isset($params['tags']) || isset($params['cat'])) { $t->tagOnly(); }
 			else { $t->catOnly(); }
 
 
-			if (isset($params['period']) && $params['period'] == 'this') {
-				$period = 'This Month';
-				$start = mktime(0, 0, 0, date("m"), 1, date("Y"));
-				$end = time();
-			} else if (isset($params['period']) && $params['period'] == 'last') {
-				$period = 'Previous Month';
-				$start = mktime(0, 0, 0, date("m")-1, 1, date("Y"));
-				$end = mktime(0, 0, 0, date("m"), 1, date("Y"));
-			} else if (isset($params['period']) && $params['period'] == '2last') {
-				$period = '2 months ago';
-				$start = mktime(0, 0, 0, date("m")-2, 1, date("Y"));
-				$end = mktime(0, 0, 0, date("m")-1, 1, date("Y"));
-			} else if (isset($params['period']) && $params['period'] == '3last') {
-				$period = '3 months ago';
-				$start = mktime(0, 0, 0, date("m")-3, 1, date("Y"));
-				$end = mktime(0, 0, 0, date("m")-2, 1, date("Y"));
-			} else if (isset($params['period']) && $params['period'] == 'last2') {
-				$period = 'Last 2 months';
-				$start = mktime(0, 0, 0, date("m")-2, 1, date("Y"));
-				$end = mktime(0, 0, 0, date("m"), 1, date("Y"));
-			} else if (isset($params['period']) && $params['period'] == 'last3') {
-				$period = 'Last 3 months';
-				$start = mktime(0, 0, 0, date("m")-3, 1, date("Y"));
-				$end = mktime(0, 0, 0, date("m"), 1, date("Y"));
-			} else if (isset($params['period']) && $params['period'] == 'thisyear') {
-				$period = 'This year';
-				$start = mktime(0, 0, 0, 1, 1, date("Y"));
-				$end = mktime(0, 0, 0, date("m"), 1, date("Y"));
-			} else {
-				$period = 'Last 7 days';
-				$start = strtotime('-7 days 00:00:00');
-				$end = time();
-			}
+			list($period, $start, $end) = getPeriod(isset($params['period']) ? $params['period'] : '');
 
 			$this->tf()->setVar('start', $start);
 			$this->tf()->setVar('end', $end);
@@ -57,9 +25,32 @@
 			$t->start($start)->end($end);
 
 			$t2 = clone $t;
-			$this->tf()->setVar('incoming', $t->incoming()->get());
-			$this->tf()->setVar('outgoing', $t2->outgoing()->get());
+			$data = array();
+			$data['incoming'] = $t->incoming()->get();
+			$data['outgoing'] = $t2->outgoing()->get();
 
+			$chart = array();
+			foreach ($data as $type => $d) {
+				$chart[$type] = array('total' => 0, 'data' => array());
+				$chart[$type]['data'][] = array('Category', 'Amount');
+				$chart[$type]['metadata'] = array();
+				foreach ($d as $row) {
+					if (isset($params['cat']) && !empty($params['cat']) && $row['catid'] != $params['cat']) { continue; }
+
+					$name = $row['cat'] . (isset($row['tag']) ? ' :: ' . $row['tag'] : '');
+					$amount = $row['value'];
+					$chart[$type]['total'] += $amount;
+
+					$chart[$type]['data'][] = array($name, abs((float)$amount));
+					$metadata['catid'] = $row['catid'];
+					if (isset($row['tagid'])) {
+						$metadata['tagid'] = $row['tagid'];
+					}
+					$chart[$type]['metadata'][] = $metadata;
+				}
+			}
+
+			$this->tf()->setVar('chart', $chart);
 			$this->tf()->get('data')->display();
 		}
 	}

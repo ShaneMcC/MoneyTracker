@@ -20,6 +20,7 @@
 		@$cutoff = strtotime("01 jan 2014");
 		@foreach ($account->getTransactions() as $transaction) {
 			@if ($transaction->getTime() < $cutoff) { continue; }
+
 			<tr>
 			<td class="date" data-value="{{$transaction->getTime()}}">{{date("Y-m-d H:i:s", $transaction->getTime())}}</td>
 			<td class="typecode"><span data-toggle="tooltip" title="{{$transaction->getType()}}">{{$transaction->getTypeCode()}}</span></td>
@@ -34,7 +35,7 @@
 			</td>
 			</tr>
 
-			@if ($lastBalance !== null) {
+			@if ($lastBalance !== null && !$filtered) {
 				@$newBalance = $lastBalance + $transaction->getAmount();
 				@if (money_format('%.2n', $transaction->getBalance()) != money_format('%.2n', $newBalance)) {
 					<tr class="error">
@@ -166,11 +167,11 @@
 		});
 	}
 
-	$('td.transactiontags div.tagtext').on('click', 'span.label-success', function() {
+	$('td.transactiontags div.tagtext').on('click', 'span.transactionTag', function() {
 		clickTag(this)
 	});
 
-	$('td.transactiontags div.tagtext').on('click', 'span.label-danger', function() {
+	$('td.transactiontags div.tagtext').on('click', 'span.untaggedTag', function() {
 		addTag(this);
 	});
 
