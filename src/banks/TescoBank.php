@@ -417,34 +417,36 @@ V8JS
 
 			$transactions = $this->extractTransactions($page, $lastBalance);
 
-			if ($historical) {
-				// Get some old shit.
-				$dates = $page->find('select[name="cycleDate"] option');
-				for ($i = 0; $i < count($dates); $i++) {
-					$cycleDate = $dates->eq($i)->attr("value");
-					if ($cycleDate == '00') { continue; }
-					echo $this->cleanElement($dates->eq($i)), "\n";
-					$url = 'https://onlineservicing.creditcards.tescobank.com/Tesco_Consumer/Transactions.do?cycleDate=' . $cycleDate;
+			// Get some old shit.
+			$dates = $page->find('select[name="cycleDate"] option');
+			for ($i = 0; $i < count($dates); $i++) {
+				$cycleDate = $dates->eq($i)->attr("value");
+				if ($cycleDate == '00') { continue; }
+				echo $this->cleanElement($dates->eq($i)), "\n";
+				$url = 'https://onlineservicing.creditcards.tescobank.com/Tesco_Consumer/Transactions.do?cycleDate=' . $cycleDate;
 
-					$page = $this->getPage($url, true);
-					$page = $this->getDocument($page);
+				$page = $this->getPage($url, true);
+				$page = $this->getDocument($page);
 
-					$lastBalance = '';
-					$items = $page->find('table tr td.normalText');
-					$next = false;
-					foreach ($items as $col) {
-						$content = $this->cleanElement($col);
-						if ($content == 'Previous balance') {
-							$next = true;
-						} else if ($next) {
-							$lastBalance = 0 - $this->parseBalance($this->cleanElement($col));
-							break;
-						}
+				$lastBalance = '';
+				$items = $page->find('table tr td.normalText');
+				$next = false;
+				foreach ($items as $col) {
+					$content = $this->cleanElement($col);
+					if ($content == 'Previous balance') {
+						$next = true;
+					} else if ($next) {
+						$lastBalance = 0 - $this->parseBalance($this->cleanElement($col));
+						break;
 					}
-
-					$olderTransactions = $this->extractTransactions($page, $lastBalance);
-					$transactions = array_merge($transactions, $olderTransactions);
 				}
+
+				$olderTransactions = $this->extractTransactions($page, $lastBalance);
+				$transactions = array_merge($transactions, $olderTransactions);
+
+				// If we're not asking for historical, then we don't need to
+				// go back any further.
+				if (!$historical) { break; }
 			}
 
 			// Now go through the transactions bottom-top so that we have them in the
