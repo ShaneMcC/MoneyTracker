@@ -96,7 +96,17 @@
 				if ($matched !== FALSE && $matched !== null) {
 					echo 'Matched: ', $ra->getAccountKey(), ' to ', $matched->getAccountKey(), "\n";
 					$map[$ra->getAccountKey()] = array('key' => $matched->getAccountKey(), 'sortcode' => $matched->getSortCode(), 'number' => $matched->getAccountNumber());
-					$endAccounts[] = $ra;
+
+					// Merge the accounts into a new account object.
+					// Take values from the matched "real" account, then update
+					// them with data from the donor mobile account.
+					$donor = $matched->toArray();
+					$merge = $ra->toArray();
+					foreach (array('lastbalance', 'available', 'misc', 'extra') as $k) { $merge[$k] = $donor[$k]; }
+					$new = Account::fromArray($merge);
+					$new->setTransactions($matched->getTransactions());
+
+					$endAccounts[] = $new;
 				} else if ($matched === null) {
 					echo 'Multiple matches for: ', $ra->getAccountKey(), "\n";
 				} else if ($matched === null) {

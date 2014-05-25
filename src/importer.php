@@ -102,6 +102,11 @@
 				$key = $accData['accountkey'];
 				unset($accData['accountkey']);
 				$result = $this->db->accounts->insert_update(array('accountkey' => $key), $accData, $accData);
+				if ($result == false) {
+					echo 'Failed to update account data for: ', $key, "\n";
+				} else {
+					echo 'Inserted/Updated account data for: ', $key, "\n";
+				}
 			}
 		}
 	}
