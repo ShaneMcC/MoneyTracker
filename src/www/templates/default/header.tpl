@@ -59,6 +59,15 @@
 						<li {[ca('page', 'tags')]}><a href="{[getWebLocation]}tags">Tags</a></li>
 						<li {[ca('page', 'data')]}><a href="{[getWebLocation]}data">Data</a></li>
 					</ul>
+
+					<form class="navbar-form navbar-form-wide navbar-right" role="search" action="{[getWebLocation]}transactions">
+						<div class="form-group">
+							<div class="left-inner-addon">
+								<span class="glyphicon glyphicon-search"></span>
+								<input type="text" autocomplete="off" class="search-query form-control" name="searchstring" placeholder="Find Transaction" value="{{$searchstring}}">
+							</div>
+						</div>
+					</form>
 				</div>
 			</div>
 		</div>

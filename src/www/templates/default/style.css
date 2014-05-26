@@ -154,7 +154,7 @@ body {
 	font: 13px/1.7em 'Open Sans', "Helvetica Neue", Helvetica, Arial, sans-serif;
 	background: #FFFFFF;
 	/* background: #EEEEEE; */
-	padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+	padding-top: 68px; /* 68px to make the container go all the way to the bottom of the topbar */
 }
 
 p {
@@ -349,19 +349,48 @@ div.controls p {
 	margin-right: 0px;
 }
 
-#sidebardiv {
-	position: absolute;
-	top: auto;
-	width: 280px;
+/**********************************************************************
+ * Bootstrap 3 also removed rounded search boxes...
+ **********************************************************************/
+input.search-query {
+	border-radius: 20px;
 }
 
+form.navbar-form-wide input {
+	width: 400px !important;
+}
+
+.right-inner-addon {
+    position: relative;
+}
+.right-inner-addon input {
+    padding-right: 30px;
+}
+.right-inner-addon i, .right-inner-addon span {
+    position: absolute;
+    right: 0px;
+    padding: 10px 12px;
+    pointer-events: none;
+}
+
+.left-inner-addon {
+    position: relative;
+}
+.left-inner-addon input {
+    padding-left: 30px;
+}
+.left-inner-addon i, .left-inner-addon span {
+    position: absolute;
+    padding: 10px 12px;
+    pointer-events: none;
+}
 
 /**********************************************************************
  * Transactions Table
  **********************************************************************/
 
 table.transactions th.date, table.transactions td.date {
-	width: 150px;
+	width: 100px;
 }
 
 table.transactions th.typecode, table.transactions td.typecode {
@@ -382,6 +411,17 @@ table.transactions th.balance, table.transactions td.balance {
 
 table.transactions th.transactiontags, table.transactions td.transactiontags {
 
+}
+
+table.transactions tr.error td {
+	background-color: #fcf2f2;
+	color: #d9534f;
+}
+table.transactions tr.error td:first-child {
+	border-left: 5px solid #d9534f;
+}
+table.transactions tr.error td:last-child {
+	border-right: 5px solid #d9534f;
 }
 
 

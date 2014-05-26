@@ -71,6 +71,7 @@
 
 	// Fluid Theme
 	session::set('fluid', true);
+	// session::set('fluid', false);
 
 	// There is no concept of users in this app.
 	session::setCurrentUser(true);
@@ -103,6 +104,9 @@
 	} */
 
 	// And display the page.
+
+	$pq = $page->getQuery();
+	$templateFactory->setVar('searchstring', isset($pq['searchstring']) ? $pq['searchstring'] : '');
 
 	$page->display();
 ?>

@@ -1,3 +1,4 @@
+	@$totalcount = 0;
 	@foreach ($accounts as $account) {
 		<div id="transactions_{{$account->getAccountKey()}}">
 		<h1>{{$account->getFullNumber()}}</h1>
@@ -22,33 +23,40 @@
 		@foreach ($account->getTransactions() as $transaction) {
 			@if ($transaction->getTime() < $start) { continue; }
 			@if ($transaction->getTime() > $end) { continue; }
+			@if (!isStringMatch($transaction->getDescription(), $searchstring)) { continue; }
 			@$count++
 
-			<tr>
-			<td class="date" data-value="{{$transaction->getTime()}}" data-nice="{{date("l d F Y", $transaction->getTime())}}">{{date("Y-m-d H:i:s", $transaction->getTime())}}</td>
-			<td class="typecode"><span data-toggle="tooltip" title="{{$transaction->getType()}}">{{$transaction->getTypeCode()}}</span></td>
-			<td class="description"><span data-toggle="tooltip" title="{{$transaction->getHash()}}">{{$transaction->getDescription()}}</span></td>
-			<td class="amount">{{money_format('%.2n', $transaction->getAmount())}}</td>
-			<td class="balance">{{money_format('%.2n', $transaction->getBalance())}}</td>
-			{-- <td class="hash">{{$transaction->getHash()}}</td> --}
-			<td class="transactiontags" data-tags="{{htmlspecialchars(json_encode($transaction->getTags()))}}" data-id="{{$transaction->getHash()}}" id="tags-{{$transaction->getHash()}}">
-			<div class="tagtext">
-				{{getTagHTML($transaction, $tags)}}
-			</div>
-			</td>
+			@$balanceError = false;
+			@if ($lastBalance !== null && !$filtered && empty($searchstring)) {
+				@$newBalance = $lastBalance + $transaction->getAmount();
+				@$balanceError = (money_format('%.2n', $transaction->getBalance()) != money_format('%.2n', $newBalance));
+			@}
+
+			<tr class="{{$balanceError ? 'error' : ''}}">
+			@$transNumber = 1 + ($transaction->getTime() - strtotime(date("Y-m-d", $transaction->getTime())));
+				<td class="date" data-value="{{$transaction->getTime()}}" data-nice="{{date("l d F Y", $transaction->getTime())}}">
+					<span data-toggle="tooltip" data-html="true" title="Day: {{date("l", $transaction->getTime())}}<br>Transaction Number: {{$transNumber}}">
+					{{date("Y-m-d", $transaction->getTime())}}
+					</span>
+				</td>
+				<td class="typecode"><span data-toggle="tooltip" title="{{$transaction->getType()}}">{{$transaction->getTypeCode()}}</span></td>
+				<td class="description"><span data-toggle="tooltip" title="{{$transaction->getHash()}}">{{$transaction->getDescription()}}</span></td>
+				<td class="amount">{{money_format('%.2n', $transaction->getAmount())}}</td>
+				<td class="balance">{{money_format('%.2n', $transaction->getBalance())}}</td>
+				{-- <td class="hash">{{$transaction->getHash()}}</td> --}
+				<td class="transactiontags" data-tags="{{htmlspecialchars(json_encode($transaction->getTags()))}}" data-id="{{$transaction->getHash()}}" id="tags-{{$transaction->getHash()}}">
+				<div class="tagtext">
+					{{getTagHTML($transaction, $tags)}}
+				</div>
+				</td>
 			</tr>
 
-			@if ($lastBalance !== null && !$filtered) {
-				@$newBalance = $lastBalance + $transaction->getAmount();
-				@if (money_format('%.2n', $transaction->getBalance()) != money_format('%.2n', $newBalance)) {
-					<tr class="error">
-					<td colspan=5>
-					<strong><em>
-					Unexpected balance... Expected: {{$newBalance}}
-					</em></strong>
-					</td>
-					</tr>
-				@}
+			@if ($balanceError) {
+			<tr class="error">
+				<td colspan=6>
+					<strong><em>Unexpected balance... Expected: {{$newBalance}}</em></strong>
+				</td>
+			</tr>
 			@}
 
 			@$lastBalance = $transaction->getBalance();
@@ -57,18 +65,23 @@
 			<tr>
 				<td class="error" colspan="6">
 					There are no transactions to display.
-					@if ($hideEmpty) {
+					@if ($hideEmpty || !empty($searchstring)) {
 					<script>$('#transactions_{{$account->getAccountKey()}}').hide();</script>
 					@}
 				</td>
 			</tr>
 		@}
+		@$totalcount += $count;
 		</tbody>
 
 		</table>
 		</div>
 		</div>
 	@}
+
+@if ($totalcount == 0) {
+	<em>There are no transactions to show.</em>
+@}
 
 <!-- Modal -->
 <div class="modal fade" id="addTagModal" tabindex="-1" role="dialog" aria-labelledby="addTagModalLabel" aria-hidden="true">

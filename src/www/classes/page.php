@@ -109,7 +109,7 @@
 					echo '</div>';
 
 					if ($fluid) {
-						echo '<div style="margin-left: 300px">';
+						echo '<div id="mainContentContainer" style="padding-left: 30px; float: left; width: calc(100% - 270px);">';
 					} else {
 						echo '<div class="col-sm-' . (12 - $sidebarWidth). '">';
 					}
@@ -117,7 +117,8 @@
 					echo '<div class="col-sm-12">';
 				}
 
-				echo '<div class="', ($fluid ? 'container-fluid' : 'container'), '" role="main">';
+				// echo '<div class="', ($fluid ? 'container-fluid' : 'container'), '" role="main" style="padding-right: 0px">';
+				echo '<div class="container-fluid" role="main" style="padding-right: 0px; padding-left: 0px">';
 				echo '<div class="row">';
 
 				if (session::exists('message')) {
@@ -135,6 +136,18 @@
 				echo '</div>';
 				echo '</div>';
 				echo '</div>';
+
+				?><script>
+					var cssCalcTestElement = document.createElement('div');
+					cssCalcTestElement.style.cssText = 'width: calc(1px);';
+					if (cssCalcTestElement.style.length < 1) {
+						// Calc not supported, hack it.
+						$(window).resize(function(){
+							$("#mainContentContainer").css("width", "100%").css("width", "-=270px");
+						});
+						$(window).resize();
+					}
+				</script><?php
 
 				$this->tf()->get('footer')->display();
 			}

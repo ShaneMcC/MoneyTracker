@@ -108,4 +108,37 @@
 		ob_end_clean();
 		alert('var_dump', '<pre>' . htmlspecialchars($data) . '</pre>', true);
 	}
+
+	/**
+	 * Check if the given input matches the searchFor string.
+	 *
+	 * searchFor can either be a partial match, wildcard matcher or regex match.
+	 *  - If searchFor starts with "s/"" or "/" and ends with "/" then regex
+	 *  - If searchFor contains either a "*" or "?" then wildcard
+	 *  - Else, partial "contains" match.
+	 *
+	 * @param $input String to check
+	 * @param $searchFor String to search for
+	 * @param $caseSensitive (Default: false) Case sensitive?
+	 * @return True is $input is a match for $searchFor
+	 */
+	function isStringMatch($input, $searchFor, $caseSensitive = false) {
+		if (empty($searchFor)) { return true; }
+
+		if (!$caseSensitive) {
+			$searchFor = strtolower($searchFor);
+			$input = strtolower($input);
+		}
+		if (preg_match('#^s?/(.*)/$#', $searchFor, $matches)) {
+			// Regex match if user starts with s/ or / and ends with /
+			return preg_match('/' . $matches[1] . '/', $input);
+		} else if (strpos($searchFor, '*') !== FALSE || strpos($searchFor, '?') !== FALSE) {
+			// wildcard match if user has * or ? anywhere in the search string
+			// http://www.php.net/manual/en/function.fnmatch.php#71725
+			return preg_match("#".strtr(preg_quote($searchFor, '#'), array('\*' => '.*', '\?' => '.'))."#", $input);
+		} else {
+			// otherwise, just search where the given string is anywhere in the title.
+			return strpos($input, $searchFor) !== false;
+		}
+	}
 ?>

@@ -22,10 +22,14 @@
 				$old = $acct->getTransactions();
 				$acct->clearTransactions();
 				foreach ($old as $t) {
-					foreach ($t->getTags() as $ttag) {
-						if ($ttag[0] == $tag) {
-							$acct->addTransaction($t);
-							break;
+					if (count($t->getTags()) == 0 && $tag == -1) {
+						$acct->addTransaction($t);
+					} else {
+						foreach ($t->getTags() as $ttag) {
+							if ($ttag[0] == $tag) {
+								$acct->addTransaction($t);
+								break;
+							}
 						}
 					}
 				}
@@ -39,7 +43,7 @@
 			}
 
 			$params = $this->getQuery();
-			$this->tf()->setVar('hideEmpty', isset($params['period']));
+			$this->tf()->setVar('hideEmpty', true);
 			$periodInput = isset($params['period']) ? $params['period'] : 'thisyear';
 			list($period, $start, $end) = getPeriod($periodInput);
 			$this->tf()->setVar('start', $start);
