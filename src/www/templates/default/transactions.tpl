@@ -1,4 +1,5 @@
 	@foreach ($accounts as $account) {
+		<div id="transactions_{{$account->getAccountKey()}}">
 		<h1>{{$account->getFullNumber()}}</h1>
 
 		<div class="table-responsive">
@@ -17,12 +18,14 @@
 
 		<tbody>
 		@$lastBalance = null;
-		@$cutoff = strtotime("01 jan 2014");
+		@$count = 0;
 		@foreach ($account->getTransactions() as $transaction) {
-			@if ($transaction->getTime() < $cutoff) { continue; }
+			@if ($transaction->getTime() < $start) { continue; }
+			@if ($transaction->getTime() > $end) { continue; }
+			@$count++
 
 			<tr>
-			<td class="date" data-value="{{$transaction->getTime()}}">{{date("Y-m-d H:i:s", $transaction->getTime())}}</td>
+			<td class="date" data-value="{{$transaction->getTime()}}" data-nice="{{date("l d F Y", $transaction->getTime())}}">{{date("Y-m-d H:i:s", $transaction->getTime())}}</td>
 			<td class="typecode"><span data-toggle="tooltip" title="{{$transaction->getType()}}">{{$transaction->getTypeCode()}}</span></td>
 			<td class="description"><span data-toggle="tooltip" title="{{$transaction->getHash()}}">{{$transaction->getDescription()}}</span></td>
 			<td class="amount">{{money_format('%.2n', $transaction->getAmount())}}</td>
@@ -50,9 +53,20 @@
 
 			@$lastBalance = $transaction->getBalance();
 		@}
+		@if ($count == 0) {
+			<tr>
+				<td class="error" colspan="6">
+					There are no transactions to display.
+					@if ($hideEmpty) {
+					<script>$('#transactions_{{$account->getAccountKey()}}').hide();</script>
+					@}
+				</td>
+			</tr>
+		@}
 		</tbody>
 
 		</table>
+		</div>
 		</div>
 	@}
 
@@ -141,8 +155,7 @@
 
 	function addTag(clickedTag) {
 		transid = $(clickedTag).parent().parent().attr('data-id');
-		date = parseInt($('td.date', $(clickedTag).closest('tr')).attr('data-value') + '000');
-		date = new Date(date).toUTCString();
+		date = $('td.date', $(clickedTag).closest('tr')).attr('data-nice');
 		description = $('td.description span', $(clickedTag).closest('tr')).text();
 		remaining = parseFloat($(clickedTag).attr('data-remaining')).toFixed(2);
 

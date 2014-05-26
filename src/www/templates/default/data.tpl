@@ -34,10 +34,12 @@
 			google.visualization.events.addListener(chart_{{$type}}, 'select', function() {
 				if (chart_{{$type}}.getSelection()[0]) {
 					var row = chart_{{$type}}.getSelection()[0].row;
+					var url = $.jurlp($(document).jurlp("url").toString());
 					if (meta_{{$type}}[row]['tagid']) {
-						window.location = '{[getWebLocation]}taggedtransactions/' + meta_{{$type}}[row]['tagid'];
+						period = url.query()['period'];
+						if (period == undefined) { period = 'last7days'; }
+						window.location = '{[getWebLocation]}taggedtransactions/' + meta_{{$type}}[row]['tagid'] + '?period=' + period;
 					} else {
-						var url = $.jurlp($(document).jurlp("url").toString());
 						url.query({'cat': meta_{{$type}}[row]['catid']});
 						window.location = url.href;
 					}

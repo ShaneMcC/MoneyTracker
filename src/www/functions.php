@@ -63,6 +63,10 @@
 			$start = mktime(0, 0, 0, 1, 1, date("Y"));
 			$end = mktime(0, 0, 0, date("m"), 1, date("Y"));
 		} else {
+			$name = 'last7days';
+		}
+
+		if (!empty($name) && $name == 'last7days') {
 			$period = 'Last 7 days';
 			$start = strtotime('-7 days 00:00:00');
 			$end = time();

@@ -38,6 +38,14 @@
 				$jsontags[$t['category']][$t['tag']] = $t['tagid'];
 			}
 
+			$params = $this->getQuery();
+			$this->tf()->setVar('hideEmpty', isset($params['period']));
+			$periodInput = isset($params['period']) ? $params['period'] : 'thisyear';
+			list($period, $start, $end) = getPeriod($periodInput);
+			$this->tf()->setVar('start', $start);
+			$this->tf()->setVar('end', $end);
+			$this->tf()->setVar('period', $period);
+
 			$this->tf()->setVar('tags', $tags);
 			$this->tf()->setVar('jsontags', $jsontags);
 			$this->tf()->setVar('accounts', $accounts);
