@@ -106,6 +106,21 @@
 		}
 
 		/**
+		 * Take a Nice Balance as used in some parts of HSBC, and return it
+		 * as a standard balance.
+		 *
+		 * @param $balance Balance input (eg: "£1.00" or "-£1.00")
+		 * @return Correct balance (eg: "1.00" or "-1.00")
+		 */
+		private function parseNiceBalance($balance) {
+			if (empty($balance)) { return ''; }
+			$negative = strpos($balance, '-') !== FALSE;
+			$balance = str_replace(',', '', $balance);
+			preg_match('@([0-9]+.[0-9]+)$@', trim($balance), $matches);
+			return $negative ? 0 - $matches[1] : $matches[1];
+		}
+
+		/**
 		 * Get the sub-accounts of this login.
 		 * This will return cached account objects.
 		 *
@@ -247,7 +262,9 @@
 			}
 
 			// Correct the balance.
-			$transaction['balance'] = $this->cleanBalance($transaction['balance'], $transaction['balance_type']);
+			if (isset($transaction['balance_type'])) {
+				$transaction['balance'] = $this->cleanBalance($transaction['balance'], $transaction['balance_type']);
+			}
 
 			$transaction['typecode'] = preg_replace('#[^A-Z0-9)]#', '', $transaction['typecode']);
 			$transaction['type'] = $this->getType($transaction['typecode']);
@@ -291,10 +308,131 @@
 		public function updateTransactions($account, $historical = false, $historicalVerbose = true) {
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
-			$page = $this->getPage('https://www.hsbc.co.uk/1/2/personal/internet-banking/recent-transaction?ActiveAccountKey=' . $accountKey . '&BlitzToken=blitz');
+
+			$card = $account->getType() == 'CREDIT CARD';
+			if ($card) {
+				$page = $this->getPage('https://www.hsbc.co.uk/1/3/personal/internet-banking/credit-card-transactions?ActiveAccountKey=' . $account->getAccountNumber() . '&accountId=' . $account->getAccountNumber() . '&productType=CCA&BlitzToken=blitz');
+			} else {
+				$page = $this->getPage('https://www.hsbc.co.uk/1/2/personal/internet-banking/recent-transaction?ActiveAccountKey=' . $accountKey . '&BlitzToken=blitz');
+			}
 			if (!$this->isLoggedIn($page)) { return false; }
 			$page = $this->getDocument($page);
 
+			if ($card) {
+				$this->updateCardTransactions($account, $accountKey, $page, $historical, $historicalVerbose);
+			} else {
+				$this->updateStandardTransactions($account, $accountKey, $page, $historical, $historicalVerbose);
+			}
+		}
+
+		/**
+		 * Update transactions from a credit-card account view.
+		 *
+		 * @param $account Account Object
+		 * @param $accountKey Calculated Account Key
+		 * @param $page Initial Page
+		 * @param $historical (Default: false) Also try to get historical
+		 *                    transactions?
+		 * @param $historicalVerbose (Default: false) Should verbose data be
+		 *                           collected for historical, or is a single-line
+		 *                           description ok?
+		 */
+		public function updateCardTransactions($account, $accountKey, $page, $historical = false, $historicalVerbose = true) {
+			$head = $page->find('table.extPibTable')->eq(0)->find('th');
+			$body = $page->find('table.extPibTable')->eq(0)->find('td');
+			$details = array();
+			for ($i = 0; $i < count($head); $i++) {
+				$key = $this->cleanElement($head->eq($i)->find('p')->eq(0));
+				$value = $this->cleanElement($body->eq($i)->find('p')->eq(0));
+
+				$details[strtolower($key)] = $value;
+			}
+
+			if (isset($details['current balance'])) {
+				$account->setBalance(0 - $this->parseNiceBalance(strip_tags($details['current balance'])));
+			}
+			if (isset($details['current limit'])) {
+				$account->setLimits('Credit Limit: '.$this->parseNiceBalance(strip_tags($details['current limit'])));
+			}
+			if (isset($details['available credit'])) {
+				$account->setAvailable($this->parseNiceBalance(strip_tags($details['available credit'])));
+			}
+
+			$lastBalance = $account->getBalance();
+			$items = $page->find('table[summary!=""] thead tr');
+			$transactions = array();
+			foreach ($items as $row) {
+				$columns = pq($row, $page)->find('td');
+				if (count($columns) < 1) { continue; }
+
+				// Pull out the data
+				$transaction['date'] = trim(strip_tags($this->cleanElement($columns->eq(0))));
+				$transaction['description'] = trim(strip_tags($this->cleanElement($columns->eq(1))));
+				$val = $this->parseNiceBalance(trim(strip_tags($this->cleanElement($columns->eq(2)))));
+				$transaction['balance'] = $lastBalance;
+
+				// TODO: Figure out how CREDITs appear on statement view, and
+				//       set this to FALSE for credits.
+				$out = true;
+				if ($out) {
+					$transaction['out'] = $val;
+					$transaction['in'] = '';
+					$transaction['typecode'] = 'DR';
+					$lastBalance += $val;
+				} else {
+					$transaction['in'] = $val;
+					$transaction['out'] = '';
+					$transaction['typecode'] = 'CR';
+					$lastBalance -= $val;
+				}
+
+				// Sanitise the above.
+				$transaction = $this->cleanTransaction($transaction);
+
+				$transactions[] = $transaction;
+			}
+die('DATA IS NOT VALID');
+
+			// Now go through the transactions bottom-top so that we have them in the
+			// order that they occured.
+			$transactions = array_reverse($transactions);
+
+			// To make ordering the transactions easier, rather than having
+			// all the days transactions having the same time, we add a second
+			// each time. (so the first transaction of the day happened at
+			// 00:00:00 the second at 00:00:01 and so on.
+			$dayCount = 0;
+			$lastDate = 0;
+
+			// Ignore transactions on the most-recent current date, as there may be more to come.
+			if (count($transactions) > 0) {
+				$firstDate = $transactions[count($transactions) -1 ]['date'];
+				foreach ($transactions as $transaction) {
+					if ($lastDate == $transaction['date']) {
+						$dayCount++;
+						$transaction['date'] += $dayCount;
+					} else {
+						$lastDate = $transaction['date'];
+						$dayCount = 0;
+					}
+					$account->addTransaction(new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['typecode'], $transaction['description'], $transaction['amount'], $transaction['balance']));
+				}
+			}
+		}
+
+		/**
+		 * Update transactions from a standard account view.
+		 *
+		 * @param $account Account Object
+		 * @param $accountKey Calculated Account Key
+		 * @param $page Initial Page
+		 * @param $historical (Default: false) Also try to get historical
+		 *                    transactions?
+		 * @param $historicalVerbose (Default: false) Should verbose data be
+		 *                           collected for historical, or is a single-line
+		 *                           description ok?
+		 */
+		private function updateStandardTransactions($account, $accountKey, $page, $historical = false, $historicalVerbose = true) {
 			// Get the first bit of useful data.
 			$items = $page->find('table.extPibTable')->eq(0)->find('td');
 			$details = array();
@@ -570,7 +708,7 @@
 						$page = $this->getDocument($page);
 					}
 				}
-			}
+			} // end if ($historical);
 		}
 	}
 ?>

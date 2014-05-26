@@ -248,42 +248,54 @@
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
 
 			$accData = $this->accountLinks[$accountKey];
+			$isCC = ($accData['type'] == 'PCC');
 
-			$data = array('requestName' => 'ac_history',
+			$data = array('requestName' => $isCC ? 'ac_cc_history' : 'ac_history',
 			              'account_index' => $accData['id'],
 			              'account_type' => $accData['type'],
 			              'cmd-All_in' => 'cmd-All_in',
 			              'statement' => '0',
 			              );
 
-			// Ignore CC for now.
-			if ($accData['type'] == 'PCC') { return; }
-
 			$decoded = $this->hsbcPost('https://www.hsbc.co.uk/1/3/mobile-1-5/accounts?CSA_DynamicBrandKey=MOBILE15', $data);
 			if ($decoded == null) { return false; }
 
 			$transactions = array();
-			foreach ($decoded->body->histories as $trans) {
+			$items = $isCC ? $decoded->body->histories[0]->ccTxns : $decoded->body->histories;
+
+			$lastBalance = $isCC ? $this->parseBalance($decoded->body->balance) : 0;
+
+			foreach ($items as $trans) {
 				echo 'Got Item', "\n";
 
 				// Pull out the data
 				$transaction = array();
-				$transaction['date'] = $trans->date;
-				$transaction['typecode'] = $trans->type;
+				$transaction['date'] = ($isCC) ? $trans->txnDate : $trans->date;
+				$transaction['typecode'] = ($isCC) ? ($trans->ccTxnAmtDrCr ? 'DR' : 'CR') : $trans->type;
 				$transaction['type'] = $this->getType($transaction['typecode']);
-				$transaction['description'] = preg_replace('#\s+#', ' ', implode(' // ', $trans->details));
+				$transaction['description'] = preg_replace('#\s+#', ' ', ($isCC) ? $trans->ccTxnMerchant : implode(' // ', $trans->details));
 
 				// Fix some known brokenness...
 				if ($transaction['description'] == 'ADDED NET INT') { $transaction['description'] = 'ADDED NET INTEREST'; }
 
-				$transaction['out'] = $this->parseBalance($trans->debitAmt);
-				$transaction['in'] = $this->parseBalance($trans->creditAmt);
-				$transaction['balance'] = $this->parseBalance($trans->balance);
+				if ($isCC) {
+					$bal = $this->parseBalance($trans->ccTxnAmt);
+					$transaction['out'] = $trans->ccTxnAmtDrCr ? $bal : '';
+					$transaction['in'] = $trans->ccTxnAmtDrCr ? '' : $bal;
+					$transaction['balance'] = $lastBalance;
+					$lastBalance -= $bal;
+
+					// Hack, the above doesn't really handle being "0" very well...
+					if ($lastBalance < 0.01 && $lastBalance > -0.01) { $lastBalance = 0; }
+				} else {
+					$transaction['out'] = $this->parseBalance($trans->debitAmt);
+					$transaction['in'] = $this->parseBalance($trans->creditAmt);
+					$transaction['balance'] = $this->parseBalance($trans->balance);
+				}
 				$transaction = $this->cleanTransaction($transaction);
 
 				$transactions[] = $transaction;
 			}
-
 
 			// Now go through the transactions bottom-top so that we have them in the
 			// order that they occured.
