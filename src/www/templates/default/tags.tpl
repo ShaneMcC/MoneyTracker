@@ -5,6 +5,7 @@
 <div class="col-sm-2"><button type="button" class="btn btn-success btn-xs"><span class="glyphicon glyphicon-plus" /></button>&nbsp;&nbsp;Add Tag</div>
 <div class="col-sm-2"><button type="button" class="btn btn-primary btn-active btn-xs"><span class="glyphicon glyphicon-ok" /></button>&nbsp;&nbsp;Tag is not currently ignored</div>
 <div class="col-sm-2"><button type="button" class="btn btn-default btn-xs"><span class="glyphicon glyphicon-remove" /></button>&nbsp;&nbsp;Tag is currently ignored</div>
+<div class="col-sm-2"><button type="button" class="btn btn-info btn-xs"><span class="glyphicon glyphicon-search" /></button>&nbsp;&nbsp;Show transactions with this tag</div>
 </div>
 </div>
 
@@ -32,6 +33,7 @@
 				<button type="button" class="btn btn-warning btn-xs editTag" data-tagid="{{$id}}" data-tagname="{{$tag}}"><span class="glyphicon glyphicon-pencil" /></button>
 				{-- <button type="button" class="btn btn-primary btn-xs toggleIgnore" data-tagid="{{$id}}" data-ignore="{{$ignore}}"><span class="glyphicon glyphicon-{{$ignoreIcon}}" /></button> --}
 				<button type="button" class="btn btn-xs toggleIgnore {{$ignoreButton}}" data-tagid="{{$id}}" data-ignore="{{$ignore}}"><span class="glyphicon glyphicon-{{$ignoreIcon}}" /></button>
+				<button type="button" class="btn btn-info btn-xs searchTag" data-tagid="{{$id}}"><span class="glyphicon glyphicon-search" /></button>
 				{{$tag}}
 				<br>
 			@ }
@@ -73,6 +75,10 @@
 				$('#doTagAction').submit();
 			}
 		}});
+	});
+
+	$('.searchTag').click(function() {
+		window.location = '{[getWebLocation]}taggedtransactions/' + $(this).attr('data-tagid');
 	});
 
 	$('.deleteTag').click(function() {
