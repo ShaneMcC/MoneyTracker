@@ -33,46 +33,55 @@
 		}
 	}
 
+	function getValidPeriods() {
+		global $__validPeriods;
+		if (!isset($__validPeriods)) {
+			$__validPeriods = array('last7days' => array('name' => 'Last 7 days',
+			                                             'start' => strtotime('-7 days 00:00:00'),
+			                                             'end' => time()
+			                                             ),
+			                        'this' => array('name' => 'This Month',
+			                                        'start' => mktime(0, 0, 0, date("m"), 1, date("Y")),
+			                                        'end' => time(),
+			                                        ),
+			                        'last' => array('name' => 'Previous Month',
+			                                        'start' => mktime(0, 0, 0, date("m")-1, 1, date("Y")),
+			                                        'end' => mktime(0, 0, 0, date("m"), 1, date("Y")),
+			                                        ),
+			                        '2last' => array('name' => '2 months ago',
+			                                         'start' => mktime(0, 0, 0, date("m")-2, 1, date("Y")),
+			                                         'end' => mktime(0, 0, 0, date("m")-1, 1, date("Y")),
+			                                         ),
+			                        '3last' => array('name' => '3 months ago',
+			                                         'start' => mktime(0, 0, 0, date("m")-3, 1, date("Y")),
+			                                         'end' => mktime(0, 0, 0, date("m")-2, 1, date("Y")),
+			                                         ),
+			                        'last2' => array('name' => 'Last 2 months',
+			                                         'start' => mktime(0, 0, 0, date("m")-2, 1, date("Y")),
+			                                         'end' => mktime(0, 0, 0, date("m"), 1, date("Y")),
+			                                         ),
+			                        'last3' => array('name' => 'Last 3 months',
+			                                         'start' => mktime(0, 0, 0, date("m")-3, 1, date("Y")),
+			                                         'end' => mktime(0, 0, 0, date("m"), 1, date("Y")),
+			                                         ),
+			                        'thisyear' => array('name' => 'This year',
+			                                            'start' => mktime(0, 0, 0, 1, 1, date("Y")),
+			                                            'end' => time(),
+			                                            ),
+			                        );
+		}
+
+		return $__validPeriods;
+	}
+
 	function getPeriod($name = '') {
-		if (!empty($name) && $name == 'this') {
-			$period = 'This Month';
-			$start = mktime(0, 0, 0, date("m"), 1, date("Y"));
-			$end = time();
-		} else if (!empty($name) && $name == 'last') {
-			$period = 'Previous Month';
-			$start = mktime(0, 0, 0, date("m")-1, 1, date("Y"));
-			$end = mktime(0, 0, 0, date("m"), 1, date("Y"));
-		} else if (!empty($name) && $name == '2last') {
-			$period = '2 months ago';
-			$start = mktime(0, 0, 0, date("m")-2, 1, date("Y"));
-			$end = mktime(0, 0, 0, date("m")-1, 1, date("Y"));
-		} else if (!empty($name) && $name == '3last') {
-			$period = '3 months ago';
-			$start = mktime(0, 0, 0, date("m")-3, 1, date("Y"));
-			$end = mktime(0, 0, 0, date("m")-2, 1, date("Y"));
-		} else if (!empty($name) && $name == 'last2') {
-			$period = 'Last 2 months';
-			$start = mktime(0, 0, 0, date("m")-2, 1, date("Y"));
-			$end = mktime(0, 0, 0, date("m"), 1, date("Y"));
-		} else if (!empty($name) && $name == 'last3') {
-			$period = 'Last 3 months';
-			$start = mktime(0, 0, 0, date("m")-3, 1, date("Y"));
-			$end = mktime(0, 0, 0, date("m"), 1, date("Y"));
-		} else if (!empty($name) && $name == 'thisyear') {
-			$period = 'This year';
-			$start = mktime(0, 0, 0, 1, 1, date("Y"));
-			$end = mktime(0, 0, 0, date("m"), 1, date("Y"));
-		} else {
+		$periods = getValidPeriods();
+
+		if (empty($name) || !isset($periods[$name])) {
 			$name = 'last7days';
 		}
 
-		if (!empty($name) && $name == 'last7days') {
-			$period = 'Last 7 days';
-			$start = strtotime('-7 days 00:00:00');
-			$end = time();
-		}
-
-		return array($period, $start, $end);
+		return array($periods[$name]['name'], $periods[$name]['start'], $periods[$name]['end']);
 	}
 
 

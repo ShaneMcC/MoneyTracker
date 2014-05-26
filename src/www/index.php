@@ -63,14 +63,10 @@
 
 	$section = array('__HEADER__' => 'Data');
 	// $section[] = array('Title' => 'Data', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data', 'Active' => ($inc == 'data'));
-	$section[] = array('Title' => 'Last 7 days', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data');
-	$section[] = array('Title' => 'This month', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=this');
-	$section[] = array('Title' => 'Last month', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=last');
-	$section[] = array('Title' => '2 months ago', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=2last');
-	$section[] = array('Title' => '3 months ago', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=3last');
-	$section[] = array('Title' => 'Last 2 months', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=last2');
-	$section[] = array('Title' => 'Last 3 months', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=last3');
-	$section[] = array('Title' => 'This year', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=thisyear');
+
+	foreach (getValidPeriods() as $period => $data) {
+		$section[] = array('Title' => $data['name'], 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=' . $period);
+	}
 	$sidebar[] = $section;
 
 	// Fluid Theme
