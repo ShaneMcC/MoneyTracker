@@ -368,12 +368,12 @@
 				// Pull out the data
 				$transaction['date'] = trim(strip_tags($this->cleanElement($columns->eq(0))));
 				$transaction['description'] = trim(strip_tags($this->cleanElement($columns->eq(1))));
-				$val = $this->parseNiceBalance(trim(strip_tags($this->cleanElement($columns->eq(2)))));
+				$val = trim(strip_tags($this->cleanElement($columns->eq(2))));
+				$val = explode(' ', $val);
+				$out = !isset($val[1]) || $val[1] != 'CR';
+				$val = $this->parseNiceBalance($val[0]);
 				$transaction['balance'] = $lastBalance;
 
-				// TODO: Figure out how CREDITs appear on statement view, and
-				//       set this to FALSE for credits.
-				$out = true;
 				if ($out) {
 					$transaction['out'] = $val;
 					$transaction['in'] = '';
@@ -391,7 +391,6 @@
 
 				$transactions[] = $transaction;
 			}
-die('DATA IS NOT VALID');
 
 			// Now go through the transactions bottom-top so that we have them in the
 			// order that they occured.
