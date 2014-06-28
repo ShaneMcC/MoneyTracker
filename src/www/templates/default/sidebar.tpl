@@ -21,5 +21,24 @@
 				<li class="{{$class}}"><a style="padding-left: {{$margin}}px;" href="{{$item['Link']}}"><span class="glyphicon glyphicon-{{$item['Icon']}}"></span> {{$item['Title']}}</a></li>
 			@} /* Foreach section */
 		@} /* Foreach sidebar */
+
+		@ if ($showPeriods) {
+			<li class="nav-header">Change Period</li>
+			@ foreach (getValidPeriods() as $period => $data) {
+
+				@$class = array();
+				@if ($thisPeriod == $period) { $class[] = 'active'; }
+				@$class = implode(' ', $class);
+				<li class="{{$class}}"><a style="padding-left: 15px;" class="periodselection" data-period="{{$period}}"><span class="glyphicon glyphicon-dashboard"></span> {{$data['name']}}</a></li>
+			@}
+		@ }
 	</ul>
 </div>
+
+<script>
+	$('.periodselection').click(function() {
+		var url = $.jurlp($(document).jurlp("url").toString());
+		url.query({'period': $(this).data('period')});
+		window.location = url.href;
+	});
+</script>

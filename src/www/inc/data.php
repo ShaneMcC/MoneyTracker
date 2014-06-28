@@ -4,6 +4,9 @@
 		/** {@inheritDoc} */
 		public function pageConstructor() {
 			$this->tf()->setVar('title', 'Money Tracker :: Data');
+			$this->tf()->setVar('showPeriods', true);
+			$q = $this->getQuery();
+			$this->tf()->setVar('thisPeriod', isset($q['period']) ? $q['period'] : 'last7days');
 		}
 
 		/** {@inheritDoc} */
@@ -38,6 +41,7 @@
 				$chart[$type]['data'][] = array('Category', 'Amount');
 				$chart[$type]['metadata'] = array();
 				$chart[$type]['showtotal'] = true;
+				$chart[$type]['hascolumns'] = true;
 				foreach ($d as $row) {
 					if (isset($params['cat']) && !empty($params['cat']) && $row['catid'] != $params['cat']) { continue; }
 

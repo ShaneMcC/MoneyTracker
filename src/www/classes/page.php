@@ -99,7 +99,7 @@
 
 
 				// TODO: This bit needs to be templated better.
-				if (session::isLoggedIn() && $this->tf()->getVar('showSidebar', true)) {
+				if (session::isLoggedIn() && ($this->tf()->getVar('showSidebar', true) || $this->tf()->getVar('showPeriods', false))) {
 					if ($fluid) {
 						echo '<div style="width: 270px; float: left">';
 					} else {

@@ -59,15 +59,10 @@
 	// $section[] = array('Title' => 'Debug Page', 'Icon' => 'warning-sign', 'Link' => page::getWebLocation() . 'debug.php');
 	$section[] = array('Title' => 'Transactions', 'Icon' => 'transfer', 'Link' => page::getWebLocation() . 'transactions', 'Active' => ($inc == 'transactions'));
 	$section[] = array('Title' => 'Tags', 'Icon' => 'tasks', 'Link' => page::getWebLocation() . 'tags', 'Active' => ($inc == 'tags'));
-	$sidebar[] = $section;
 
-	$section = array('__HEADER__' => 'Data');
-	// $section[] = array('Title' => 'Data', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data', 'Active' => ($inc == 'data'));
+	$section[] = array('Title' => 'Data', 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data', 'Active' => ($inc == 'data'));
+	// $sidebar[] = $section;
 
-	foreach (getValidPeriods() as $period => $data) {
-		$section[] = array('Title' => $data['name'], 'Icon' => 'stats', 'Link' => page::getWebLocation() . 'data?period=' . $period);
-	}
-	$sidebar[] = $section;
 
 	// Fluid Theme
 	session::set('fluid', true);
@@ -80,6 +75,7 @@
 	$templateFactory->setVar('sidebar', $sidebar);
 	$templateFactory->setVar('fluid', session::get('fluid', false));
 	$templateFactory->setVar('showSidebar', count($sidebar) > 0);
+	$templateFactory->setVar('showPeriods', false);
 
 	$templateFactory->setVar('__pagename', $inc);
 	$templateFactory->setVar('__pagegroup', $inc);

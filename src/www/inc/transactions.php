@@ -4,6 +4,9 @@
 		/** {@inheritDoc} */
 		public function pageConstructor() {
 			$this->tf()->setVar('title', 'Money Tracker :: Transactions');
+			$this->tf()->setVar('showPeriods', true);
+			$q = $this->getQuery();
+			$this->tf()->setVar('thisPeriod', isset($q['period']) ? $q['period'] : 'last7days');
 		}
 
 		/** {@inheritDoc} */
@@ -26,7 +29,7 @@
 
 			$params = $this->getQuery();
 			$this->tf()->setVar('hideEmpty', isset($params['period']));
-			$periodInput = isset($params['period']) ? $params['period'] : 'thisyear';
+			$periodInput = isset($params['period']) ? $params['period'] : 'last7days';
 			list($period, $start, $end) = getPeriod($periodInput);
 			$this->tf()->setVar('start', $start);
 			$this->tf()->setVar('end', $end);
