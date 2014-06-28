@@ -22,7 +22,7 @@
 		@ foreach ($chart as $type => $data) {
 			var data_{{$type}} = google.visualization.arrayToDataTable( {{json_encode($data['data'])`}} );
 			var element_{{$type}} = document.getElementById('chart_{{$type}}');
-			var chart_{{$type}} = new google.visualization.PieChart(element_{{$type}});
+			var chart_{{$type}} = new google.visualization.{{$data['charttype']}}(element_{{$type}});
 			var meta_{{$type}} = {{json_encode($data['metadata'])`}};
 			chart_{{$type}}.draw(data_{{$type}},
 			                     {title: '{{ucfirst($type)}} ({{money_format('%.2n', $data['total'])}})',
@@ -34,13 +34,28 @@
 			google.visualization.events.addListener(chart_{{$type}}, 'select', function() {
 				if (chart_{{$type}}.getSelection()[0]) {
 					var row = chart_{{$type}}.getSelection()[0].row;
+					@ if ($data['hascolumns']) {
+						var col = chart_{{$type}}.getSelection()[0].column - 1;
+					@ }
 					var url = $.jurlp($(document).jurlp("url").toString());
-					if (meta_{{$type}}[row]['tagid']) {
+					@ if ($data['hascolumns']) {
+						if (meta_{{$type}}['tagid']) {
+					@ } else {
+						if (meta_{{$type}}[row]['tagid']) {
+					@ }
 						period = url.query()['period'];
 						if (period == undefined) { period = 'last7days'; }
-						window.location = '{[getWebLocation]}taggedtransactions/' + meta_{{$type}}[row]['tagid'] + '?period=' + period;
+						@ if ($data['hascolumns']) {
+							window.location = '{[getWebLocation]}taggedtransactions/' + meta_{{$type}}['tagid']['col'] + '?period=' + period;
+						@ } else {
+							window.location = '{[getWebLocation]}taggedtransactions/' + meta_{{$type}}[row]['tagid'] + '?period=' + period;
+						@ }
 					} else {
-						url.query({'cat': meta_{{$type}}[row]['catid']});
+						@ if ($data['hascolumns']) {
+							url.query({'cat': meta_{{$type}}['catid'][col]});
+						@ } else {
+							url.query({'cat': meta_{{$type}}[row]['catid']});
+						@ }
 						window.location = url.href;
 					}
 				}
