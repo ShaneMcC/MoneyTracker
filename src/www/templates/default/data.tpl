@@ -25,7 +25,8 @@
 			var chart_{{$type}} = new google.visualization.{{$data['charttype']}}(element_{{$type}});
 			var meta_{{$type}} = {{json_encode($data['metadata'])`}};
 			chart_{{$type}}.draw(data_{{$type}},
-			                     {title: '{{ucfirst($type)}} ({{money_format('%.2n', $data['total'])}})',
+			                     {
+			                      title: '{{isset($data["title"]) ? $data["title"] : ucfirst($type)}}{{$data["showtotal"] ? ' (' . money_format('%.2n', $data['total']) . ')' : ''}}',
 			                      is3D: true,
 			                      tooltip: {showColorCode: true},
 			                     }

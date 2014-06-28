@@ -37,6 +37,7 @@
 				$chart[$type]['charttype'] = 'PieChart';
 				$chart[$type]['data'][] = array('Category', 'Amount');
 				$chart[$type]['metadata'] = array();
+				$chart[$type]['showtotal'] = true;
 				foreach ($d as $row) {
 					if (isset($params['cat']) && !empty($params['cat']) && $row['catid'] != $params['cat']) { continue; }
 
@@ -86,6 +87,21 @@
 			$chart['Combined']['data'] = $this->flip($chart['Combined']['data']);
 			$chart['Combined']['metadata'] = $this->flip($chart['Combined']['metadata']);
 			$chart['Combined']['hascolumns'] = true;
+
+
+			$chart['RectifiedOutgoing'] = $chart['outgoing'];
+			$chart['RectifiedOutgoing']['total'] = 0;
+			$chart['RectifiedOutgoing']['showtotal'] = false;
+			$chart['RectifiedOutgoing']['title'] = 'Rectifed Outgoing';
+			foreach ($chart['RectifiedOutgoing']['data'] as $key => $row) {
+				if (!is_numeric($row[1])) { continue; }
+				if (isset($cdata['incoming'][$row[0]])) {
+					$chart['RectifiedOutgoing']['data'][$key][1] -= $cdata['incoming'][$row[0]];
+					$chart['RectifiedOutgoing']['data'][$key][1] = max(0, $chart['RectifiedOutgoing']['data'][$key][1]);
+				}
+
+				$chart['RectifiedOutgoing']['total'] += $chart['RectifiedOutgoing']['data'][$key][1];
+			}
 
 			$this->tf()->setVar('chart', $chart);
 			$this->tf()->get('data')->display();
