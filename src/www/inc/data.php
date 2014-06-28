@@ -28,10 +28,12 @@
 			$data = array();
 			$data['incoming'] = $t->incoming()->get();
 			$data['outgoing'] = $t2->outgoing()->get();
-
 			$chart = array();
+			$cdata = array();
+
 			foreach ($data as $type => $d) {
 				$chart[$type] = array('total' => 0, 'data' => array());
+				$cdata[$type] = array();
 				$chart[$type]['data'][] = array('Category', 'Amount');
 				$chart[$type]['metadata'] = array();
 				foreach ($d as $row) {
@@ -42,12 +44,25 @@
 					$chart[$type]['total'] += $amount;
 
 					$chart[$type]['data'][] = array($name, abs((float)$amount));
+					$cdata[$type][$name] = (float)$amount;
+
 					$metadata['catid'] = $row['catid'];
 					if (isset($row['tagid'])) {
 						$metadata['tagid'] = $row['tagid'];
 					}
 					$chart[$type]['metadata'][] = $metadata;
 				}
+			}
+
+			$chart['RectifiedOutgoing'] = $chart['outgoing'];
+			$chart['RectifiedOutgoing']['total'] = 0;
+			foreach ($chart['RectifiedOutgoing']['data'] as $key => &$row) {
+				if (isset($cdata['incoming'][$row[0]])) {
+					$row[1] -= $cdata['incoming'][$row[0]];
+					$row[1] = max(0, $row[1]);
+				}
+
+				$chart['RectifiedOutgoing']['total'] += $row[1];
 			}
 
 			$this->tf()->setVar('chart', $chart);
