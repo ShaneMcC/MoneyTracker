@@ -41,7 +41,7 @@
 				$chart[$type]['data'][] = array('Category', 'Amount');
 				$chart[$type]['metadata'] = array();
 				$chart[$type]['showtotal'] = true;
-				$chart[$type]['hascolumns'] = true;
+				$chart[$type]['hascolumns'] = false;
 				foreach ($d as $row) {
 					if (isset($params['cat']) && !empty($params['cat']) && $row['catid'] != $params['cat']) { continue; }
 

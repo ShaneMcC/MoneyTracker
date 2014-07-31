@@ -47,7 +47,7 @@
 						period = url.query()['period'];
 						if (period == undefined) { period = 'last7days'; }
 						@ if ($data['hascolumns']) {
-							window.location = '{[getWebLocation]}taggedtransactions/' + meta_{{$type}}['tagid']['col'] + '?period=' + period;
+							window.location = '{[getWebLocation]}taggedtransactions/' + meta_{{$type}}['tagid'][col] + '?period=' + period;
 						@ } else {
 							window.location = '{[getWebLocation]}taggedtransactions/' + meta_{{$type}}[row]['tagid'] + '?period=' + period;
 						@ }
