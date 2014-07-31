@@ -95,7 +95,7 @@
 
 			$chart['RectifiedOutgoing'] = $chart['outgoing'];
 			$chart['RectifiedOutgoing']['total'] = 0;
-			$chart['RectifiedOutgoing']['showtotal'] = false;
+			//$chart['RectifiedOutgoing']['showtotal'] = false;
 			$chart['RectifiedOutgoing']['title'] = 'Rectifed Outgoing';
 			foreach ($chart['RectifiedOutgoing']['data'] as $key => $row) {
 				if (!is_numeric($row[1])) { continue; }
