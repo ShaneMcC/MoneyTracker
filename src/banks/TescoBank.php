@@ -417,10 +417,6 @@ V8JS
 
 			$transactions = $this->extractTransactions($page, $lastBalance);
 
-			// Set the current account balance based on the balance after the
-			// most recent transaction.
-			$account->setBalance($transactions[0]['balance']);
-
 			// Get some old shit.
 			$dates = $page->find('select[name="cycleDate"] option');
 			for ($i = 0; $i < count($dates); $i++) {
@@ -447,6 +443,10 @@ V8JS
 
 				$olderTransactions = $this->extractTransactions($page, $lastBalance);
 				$transactions = array_merge($transactions, $olderTransactions);
+
+				// Set the current account balance based on the balance after the
+				// most recent transaction.
+				$account->setBalance($transactions[0]['balance']);
 
 				// If we're not asking for historical, then we don't need to
 				// go back any further.
