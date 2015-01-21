@@ -7,13 +7,20 @@
 		/** Directory where templates are stored. */
 		private $dir;
 		private $compiledDir;
+		private $factory;
 		private $vars = array();
 		private $file;
 		private $output;
 		private $webdir = '';
 		private $parserVersion = '1';
 
-		public function __construct($dir = null, $theme = 'default', $compiledDir = null) {
+		public function __construct(TemplateFactory $factory) {
+			$this->factory = $factory;
+
+			$dir = $this->factory->getDir();
+			$theme = $this->factory->getTheme();
+			$compiledDir = $this->factory->getCompiledDir();
+
 			if ($dir === null) {
 				$dir = realpath(dirname(__FILE__) . '/../') . '/templates/';
 			}
@@ -57,6 +64,31 @@
 
 		public function getWebLocation($file = '') {
 			return $this->getLocation($file, true);
+		}
+
+		public function getNewPageLink($page = '', $query = array()) {
+			if (empty($page)) {
+				$url = $_SERVER['REDIRECT_URL'];
+			} else {
+				$url = $this->getWebLocation();
+				$url .= $page;
+			}
+
+			if ($query !== FALSE) {
+				$p = $this->getVar('params');
+				if (isset($p['query'])) {
+					parse_str($p['query'], $q);
+					$q = array_merge((is_array($q) ? $q : array()), $query);
+				} else {
+					$q = $query;
+				}
+				if (count($q) > 0) {
+					$url .= '?';
+					$url .= http_build_query($q);
+				}
+			}
+
+			return $url;
 		}
 
 		public function ca($type, $page) {
@@ -190,7 +222,7 @@
 		}
 
 		public function get($template = '') {
-			$t = new Templater($this->dir, $this->theme, $this->compiledDir);
+			$t = new Templater($this);
 
 			if (!empty($template)) {
 				$t->loadTemplate($template);
@@ -216,5 +248,9 @@
 		public function hasVar($name) {
 			return isset($this->vars[$name]);
 		}
+
+		public function getDir() { return $this->dir; }
+		public function getTheme() { return $this->theme; }
+		public function getCompiledDir() { return $this->compiledDir; }
 	}
 ?>

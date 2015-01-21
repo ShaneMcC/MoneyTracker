@@ -181,6 +181,29 @@
 		}
 
 		/**
+		 * Maniuplate the current location.
+		 */
+		public function getNewPageLink($page = '', $query = array()) {
+			if (empty($page)) {
+				$url = $_SERVER['REDIRECT_URL'];
+			} else {
+				$url = page::getWebLocation();
+				$url .= $page;
+			}
+
+			if ($query !== FALSE) {
+				$q = $this->getQuery();
+				$q = array_merge((is_array($q) ? $q : array()), $query);
+				if (count($q) > 0) {
+					$url .= '?';
+					$url .= http_build_query($q);
+				}
+			}
+
+			return $url;
+		}
+
+		/**
 		 * Redirect to the given location.
 		 *
 		 * @param $location Location to redirect to.

@@ -55,12 +55,25 @@
 				<div class="navbar-collapse collapse">
 					<ul class="nav navbar-nav">
 						<li {[ca('page', 'home')]}><a href="{[getWebLocation]}">Home</a></li>
-						<li {[ca('page', 'transactions')]}><a href="{[getWebLocation]}transactions">Transactions</a></li>
+						<li {[ca('page', 'transactions')]}><a href="{[getNewPageLink('transactions')]}">Transactions</a></li>
 						<li {[ca('page', 'tags')]}><a href="{[getWebLocation]}tags">Tags</a></li>
-						<li {[ca('page', 'data')]}><a href="{[getWebLocation]}data">Data</a></li>
+						<li {[ca('page', 'data')]}><a href="{[getNewPageLink('data', array('searchstring' => null, 'untagged' => null))]}">Data</a></li>
 					</ul>
 
-					<form class="navbar-form navbar-form-wide navbar-right" role="search" action="{[getWebLocation]}transactions">
+					@ if ($__pagename != 'transactions') {
+					<form class="navbar-form navbar-form-wide navbar-right" role="search" action="{[getNewPageLink('transactions', FALSE)]}">
+					@ } else {
+					<form class="navbar-form navbar-form-wide navbar-right" role="search" action="{[getNewPageLink('', FALSE)]}">
+					@ }
+					@
+					@$p = $this->getVar('params');
+					@ if (isset($p['query'])) {
+					@   parse_str($p['query'], $q);
+					@   foreach ($q as $k => $v) {
+					@     if ($k == 'searchstring') { continue; }
+    				@	  echo '<input type="hidden" name="', htmlspecialchars($k) ,'" value="', htmlspecialchars($v) ,'" />';
+					@   }
+					@ }
 						<div class="form-group">
 							<div class="left-inner-addon">
 								<span class="glyphicon glyphicon-search"></span>
