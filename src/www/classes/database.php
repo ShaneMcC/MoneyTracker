@@ -69,6 +69,30 @@
 			return FALSE;
 		}
 
+		public function getSimilar($transaction, $onlyTagged = false) {
+			$result = array();
+
+			$similar = array('description' => $transaction->getDescription(),
+			                 'accountkey' => $transaction->getAccountKey(),
+				             // TypeCode breaks with HSBCMerge, so instead we ensure the amount is the same direction from 0
+				             'amount ' . ($transaction->getAmount() > 0 ? '>' : '<') . ' ?' => '0',
+				             );
+
+			foreach ($this->db->transactions->where($similar) as $row) {
+				$r = iterator_to_array($row);
+				$t = Transaction::fromArray($r);
+				$add = !$onlyTagged;
+				foreach ($this->db->taggedtransaction->where('transaction',  $t->getHash()) as $tag) {
+					$t->addTag($tag['tag'], $tag['value']);
+					$add = true;
+				}
+				$t->resetTagsChanged();
+				if ($add) { $result[] = $t; }
+			}
+
+			return $result;
+		}
+
 		public function deleteTransactionTag($transaction, $tag) {
 			$tags = $transaction->getTags();
 			$transaction->clearTags();
@@ -90,8 +114,8 @@
 		}
 
 		public function getAllTags($includeEmptyCategories = FALSE) {
-			$q = $this->pdo->query('SELECT t.id AS tagid, c.name AS category, c.id AS categoryid, t.tag AS tag, t.ignore AS `ignore` FROM tags AS t '.($includeEmptyCategories ? 'RIGHT' : '').' JOIN categories AS c ON t.category = c.id ORDER by c.name ASC, t.tag ASC');
-			$result = $q->fetchAll(PDO::FETCH_ASSOC);
+			$q = $this->pdo->query('SELECT ' . ($includeEmptyCategories ? '' : 't.id AS phpkey, ') . 't.id AS tagid, c.name AS category, c.id AS categoryid, t.tag AS tag, t.ignore AS `ignore` FROM tags AS t '.($includeEmptyCategories ? 'RIGHT' : '').' JOIN categories AS c ON t.category = c.id ORDER by c.name ASC, t.tag ASC');
+			$result = $includeEmptyCategories ? $q->fetchAll(PDO::FETCH_ASSOC) : $q->fetchAll(PDO::FETCH_UNIQUE | PDO::FETCH_ASSOC);
 			return $result;
 		}
 
@@ -101,6 +125,20 @@
 
 		public function getPDO() {
 			return $this->pdo;
+		}
+
+		public function guessTransactionTag($transaction) {
+			$similar = $this->getSimilar($transaction, true);
+			$guessTags = array();
+			foreach ($similar as $s) {
+			foreach ($s->getTags() as $t) {
+				if (!isset($guessTags[$t[0]])) { $guessTags[$t[0]] = 0;}
+					$guessTags[$t[0]]++;
+				}
+			}
+			arsort($guessTags);
+			reset($guessTags);
+			return key($guessTags);
 		}
 	}
 
