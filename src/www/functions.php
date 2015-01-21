@@ -17,7 +17,20 @@
 		$templateFactory->get('alert')->setVar('message', $message)->display();
 	}
 
-	function getTagHTML($transaction, $tags) {
+	function showGuessTagHTML($transaction, $tags) {
+		global $db;
+
+		$guessed = $db->guessTransactionTag($transaction);
+
+		if ($guessed != null) {
+			$remaining = abs($transaction->getAmount()) - $transaction->getTagValue();
+			echo '<span class="guessedTag label label-warning" data-usetag="', $guessed, '" data-remaining="', $remaining, '">';
+			echo $tags[$guessed], ' (', money_format('%.2n', $remaining), ')';
+			echo '</span> ';
+		}
+	}
+
+	function getTagHTML($transaction, $tags, $guess = true) {
 		$type = ($transaction->getAmount() < 0) ? 'primary' : 'success';
 		foreach ($transaction->getTags() as $t) {
 			echo '<span class="transactionTag label label-', $type, '" data-tagid="', $t[0], '">';
@@ -30,6 +43,8 @@
 			echo '<span class="untaggedTag label label-danger" data-remaining="', $remaining, '">';
 			echo 'Untagged (', money_format('%.2n', $remaining), ')';
 			echo '</span> ';
+
+			if ($guess) { showGuessTagHTML($transaction, $tags); }
 		}
 	}
 

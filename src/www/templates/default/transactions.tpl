@@ -178,6 +178,14 @@
 		$('#addTagForm input[name="value"]').val(remaining);
 
 		$('#addTagModal').modal();
+		if ($(clickedTag).attr('data-usetag') != undefined) {
+			$('#addTagForm select[name="tag"]').val($(clickedTag).attr('data-usetag'));
+			$('#addTagForm select[name="tag"]').css('background-color', '#FCF8E3')
+			$('#addTagForm input[name="value"]').css('background-color', '#FCF8E3')
+		} else {
+			$('#addTagForm select[name="tag"]').css('background-color', '')
+			$('#addTagForm input[name="value"]').css('background-color', '')
+		}
 	}
 
 	function clickTag(clickedTag) {
@@ -198,6 +206,10 @@
 	});
 
 	$('td.transactiontags div.tagtext').on('click', 'span.untaggedTag', function() {
+		addTag(this);
+	});
+
+	$('td.transactiontags div.tagtext').on('click', 'span.guessedTag', function() {
 		addTag(this);
 	});
 
