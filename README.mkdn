@@ -5,6 +5,7 @@ Webapp to track money across various bank accounts and show some statistics base
 
 Getting Started
 ==========
+Make sure to init/update the submodules after checking out or updating - `git submodule update --init`
 
 There are 2 parts to this project, there is the main web app (`src/www`) and the "backend" stuff (`src` excluding the `www` folder)
 
