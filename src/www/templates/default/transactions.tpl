@@ -43,7 +43,7 @@
 				</td>
 				<td class="typecode"><span data-toggle="tooltip" title="{{$transaction->getType()}}">{{$transaction->getTypeCode()}}</span></td>
 				<td class="description">
-					<a class="searchicon" data-searchtext="{{$transaction->getDescription()}}" href="?searchstring={{$transaction->getDescription()}}&period={{$periodid}}"><span class="glyphicon glyphicon-search"></span></a>
+					<a class="searchicon" data-searchtext="{{$transaction->getDescription()}}" href="{[getNewPageLink('', array('searchstring' => $transaction->getDescription()))]}"><span class="glyphicon glyphicon-search"></span></a>
 					<span data-toggle="tooltip" title="{{$transaction->getHash()}}">{{$transaction->getDescription()}}</span>
 				</td>
 				<td class="amount">{{money_format('%.2n', $transaction->getAmount())}}</td>
