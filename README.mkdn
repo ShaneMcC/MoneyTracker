@@ -1,1 +1,106 @@
-Nothing much to see here yet.
+Overview
+==========
+
+Webapp to track money across various bank accounts and show some statistics based on the data tracked.
+
+Getting Started
+==========
+
+There are 2 parts to this project, there is the main web app (`src/www`) and the "backend" stuff (`src` excluding the `www` folder)
+
+Typical usage scenerio is to check this out somewhere, then point an apache virtualhost at `src/www` (or symlink `src/www` somewhere) and then cron `src/cron.php` once a night to pull the actual transaction data.
+
+Before you can actually get the data, you need to create `src/config.user.php` and add some mysql details if different from `src/config.php` and also some bank details. Then import `src/bank.sql` into the new database.
+
+For the `src/config.user.php` file, you would do something like this (Assuming that only the password changed for the database):
+
+Example:
+
+```
+<?php
+	$config['database']['pass'] = 'mybankinfopassword';
+
+	$config['bank'] = array();
+
+	$config['bank'][] = new Halifax('Username', 'Password', 'MemorableInformation');
+	$config['bank'][] = new TescoBank('Username', 'Password', 'SecurityNumber');
+?>
+```
+
+Supported Banks
+==========
+
+There are support for 3 banks currently, `Halifax`, `TescoBank` and `HSBC`.
+
+Obviously support is limited to Banks I use, or Banks people have contributed support for.
+
+Halifax
+----------
+Halifax requires no special treatment, and just works. Only tested with a single Current Account.
+
+TescoBank
+----------
+
+`TescoBank` sends a text message the first time you login, so you will need to run `src/cron.php` from CLI the first time you use a `TescoBank` account, but otherwise just-works.
+
+Only tested with a single Credit Card.
+
+HSBC
+----------
+
+HSBC is a bit different from the others there are 3 options, `HSBC`, `HSBCMobile` and `HSBCMerge`
+
+Tested with Loan, Savings, Current Account and Credit Card.
+
+`HSBC` requires that you run the script manually, so that it can prompt for your SecureKey code each time:
+```
+	$config['bank'][] = new HSBC('Username', 'MemorableInformation', '##');
+```
+(Note the `"##"` at the end, this makes the app prompt for the code - you could alternatively give it the current code first, but then it would only work once.)
+
+The next option is `HSBCMobile`
+```
+	$config['bank'][] = new HSBCMobile('Username', 'MemorableInformation', 'MobilePassword');
+```
+This requires that you have setup mobile banking using the app so that you can provide a password. This won't ask for a securekey, but the drawbacks however are that this provides slightly less information than the regular `HSBC` (Incomplete transaction typecodes, and incomplete account numbers)
+
+The third option is `HSBCMerge` - this is only used if you have originally used `HSBC`, and now want to use `HSBCMobile`. It uses the same parameters as `HSBCMobile` but is able to link the incomplete account numbers provided to their `HSBC` counterparts. Otherwise it is functionally identical.
+
+The reason `HSBCMerge` exists, is so that you can do something like this in your config:
+
+```
+	if (defined('STDIN') && posix_isatty(STDIN)) {
+		$config['bank'][] = new HSBC('Username', 'MemorableInformation', '##');
+	} else {
+		$config['bank'][] = new HSBCMerge('Username', 'MemorableInformation', 'MobilePassword');
+	}
+```
+
+This will use the full `HSBC` if you run from a CLI, else fallback to use `HSBCMerge` - the best of both worlds, just be sure to run it from a CLI periodically to ensure complete data coverage.
+
+HSBC are soon to add the option to login on the web without a securekey in a limited-access mode (no sending money), so this should hopefully be only needed for a short period.
+
+Broken?
+==========
+
+This relies *heavily* on screen-scraping (Only HSBCMobile provides a nice consumable API) and is likely to break if:
+1) The login flow is interrupted (eg to show an important message from the bank)
+2) The HTML on the pages changes (eg a redesign of the online banking system)
+
+At the moment, there is no logging if there are errors obtaining the data.
+
+Is it safe?
+==========
+Certainly not.
+
+This requires that you store your online banking credentials in plaintext on your PC. Your Bank will not approve of this, and you will not be covered if someone obtains your online banking details from your drive and logs in as you and causes trouble. Be sensible, don't store them on a shared server, or on a device that may be used on untrusted networks or easily accessible by third parties (either via the network, or physically).
+
+In addition, it assumes that you trust that I haven't added code that sends all your money to me (I haven't) - you should vet the bank-scraping code yourself (It's all under `src/banks`) before you even consider using this.
+
+Contributions
+==========
+Contributions are accepted by pull request.
+
+New Banks will be accepted after code review, but will be marked as UNTESTED.
+
+Changes to the webapp will be tested more thoroughly before acceptance. 
