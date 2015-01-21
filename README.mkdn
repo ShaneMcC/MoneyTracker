@@ -98,6 +98,10 @@ This requires that you store your online banking credentials in plaintext on you
 
 In addition, it assumes that you trust that I haven't added code that sends all your money to me (I haven't) - you should vet the bank-scraping code yourself (It's all under `src/banks`) before you even consider using this.
 
+It also assumes that the Banks won't change their code in such a way that makes bad things happen when this tries to navigate it's way around.
+
+Other than the above, "maybe".
+
 Contributions
 ==========
 Contributions are accepted by pull request.
