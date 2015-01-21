@@ -2,6 +2,7 @@ src/banks/.cookies-*
 src/banks/.permdata-*
 src/config.user.php
 src/test.php
+src/www/test.php
 src/www/templates_c/
 src/www/analyser/data.rules.php
 bank_full*.sql
