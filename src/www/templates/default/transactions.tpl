@@ -24,6 +24,8 @@
 			@if ($transaction->getTime() < $start) { continue; }
 			@if ($transaction->getTime() > $end) { continue; }
 			@if (!isStringMatch($transaction->getDescription(), $searchstring)) { continue; }
+			@if ($onlyUntagged && count($transaction->getTags()) > 0) { continue; }
+
 			@$count++
 
 			@$balanceError = false;
@@ -40,7 +42,10 @@
 					</span>
 				</td>
 				<td class="typecode"><span data-toggle="tooltip" title="{{$transaction->getType()}}">{{$transaction->getTypeCode()}}</span></td>
-				<td class="description"><span data-toggle="tooltip" title="{{$transaction->getHash()}}">{{$transaction->getDescription()}}</span></td>
+				<td class="description">
+					<a class="searchicon" data-searchtext="{{$transaction->getDescription()}}" href="?searchstring={{$transaction->getDescription()}}&period={{$periodid}}"><span class="glyphicon glyphicon-search"></span></a>
+					<span data-toggle="tooltip" title="{{$transaction->getHash()}}">{{$transaction->getDescription()}}</span>
+				</td>
 				<td class="amount">{{money_format('%.2n', $transaction->getAmount())}}</td>
 				<td class="balance">{{money_format('%.2n', $transaction->getBalance())}}</td>
 				{-- <td class="hash">{{$transaction->getHash()}}</td> --}
@@ -236,5 +241,11 @@
 		}).done(function(data) {
 			$('div.tagtext', parentElement).html(data);
 		});
+	});
+
+	$('.searchicon').click(function() {
+		var url = $.jurlp($(document).jurlp("url").toString());
+		url.query({'searchstring': $(this).data('searchtext')});
+		window.location = url.href;
 	});
 </script>
