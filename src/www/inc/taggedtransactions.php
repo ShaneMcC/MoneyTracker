@@ -57,6 +57,7 @@
 			$this->tf()->setVar('tags', $tags);
 			$this->tf()->setVar('jsontags', $jsontags);
 			$this->tf()->setVar('accounts', $accounts);
+			$this->tf()->setVar('onlyUntagged', isset($params['untagged']));
 			$this->tf()->setVar('filtered', true);
 			$this->tf()->get('transactions')->display();
 		}

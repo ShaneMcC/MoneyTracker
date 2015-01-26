@@ -59,6 +59,10 @@
 			                                             'start' => strtotime('-180 days 00:00:00'),
 			                                             'end' => time()
 			                                             ),
+			                        'last365days' => array('name' => 'Last 365 days',
+			                                             'start' => strtotime('-365 days 00:00:00'),
+			                                             'end' => time()
+			                                             ),
 			                        'this' => array('name' => 'This Month',
 			                                        'start' => mktime(0, 0, 0, date("m"), 1, date("Y")),
 			                                        'end' => time(),
