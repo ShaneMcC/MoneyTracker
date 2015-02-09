@@ -75,25 +75,30 @@
 			// Tell them a bit about ourselves...
 			$cookie = $this->browser->getCurrentCookieValue('ArcotAuthDid');
 			$deviceID = isset($this->permdata['deviceID']) ? $this->permdata['deviceID'] : '';
-			$data = array('MFP' => '{"navigator":{"doNotTrack":"unspecified","oscpu":"Linux x86_64","vendor":"","vendorSub":"","productSub":"20100101","cookieEnabled":true,"buildID":"20140402095913","appCodeName":"Mozilla","appName":"Netscape","appVersion":"5.0 (X11)","platform":"Linux x86_64","userAgent":"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:29.0) Gecko/20100101 Firefox/29.0","product":"Gecko","language":"en-US","onLine":true},"plugins":[],"screen":{"availHeight":1200,"availWidth":1920,"colorDepth":24,"height":1200,"pixelDepth":24,"width":1920},"extra":{"timezone":-60,"sigVersion":"1.5"}}',
-			              'DeviceIDType' => 'httpcookie',
-			              'DeviceID' => $cookie === false ? $deviceID : $cookie,
-			              'processreq' => 'true',
-			              'StateDataAttrNm' => $document->find('input[name="StateDataAttrNm"]')->attr("value"),
-			             );
-			$page = $this->browser->post($this->browser->getURL(), $data);
+
+			$this->browser->setFieldByName('MFP', '{"navigator":{"doNotTrack":"unspecified","oscpu":"Linux x86_64","vendor":"","vendorSub":"","productSub":"20100101","cookieEnabled":true,"buildID":"20150125221831","appCodeName":"Mozilla","appName":"Netscape","appVersion":"5.0 (X11)","platform":"Linux x86_64","userAgent":"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:35.0) Gecko/20100101 Firefox/35.0","product":"Gecko","language":"en-US","onLine":true},"plugins":[],"screen":{"availHeight":1200,"availWidth":1920,"colorDepth":24,"height":1200,"pixelDepth":24,"width":1920},"extra":{"timezone":0,"sigVersion":"1.5"}}');
+			$this->browser->setFieldByName('DeviceIDType', 'httpcookie');
+			$this->browser->setFieldByName('DeviceID', $cookie === false ? $deviceID : $cookie);
+			$this->browser->setFieldByName('processreq', 'true');
+			$this->browser->setFieldByName('StateDataAttrNm', $document->find('input[name="StateDataAttrNm"]')->attr("value"));
+
+			$page = $this->browser->submitFormByName('CollectMFPToEvaluate');
 			$document = $this->getDocument($page);
+
+			if ($document->find('input[name="StateDataAttrNm"]')->attr("value") == "") {
+				die('Failed first hurdle.');
+			}
 
 			// Fuck off some more.
 			// More about us! Yay.
-			$data = array('AUTHTOKEN_PRESENT' => (isset($this->permdata['otpdata']) ? 'true' : 'false'),
-			              'ERROR_DETAILS' => '',
-			              'processreq' => 'true',
-			              'StateDataAttrNm' => $document->find('input[name="StateDataAttrNm"]')->attr("value"),
-			              'STORAGE_TYPE' => 'Cookie',
-			              'DIAGNOSTICS' => 'Localstorage is supportedCookies are supported',
-			             );
-			$page = $this->browser->post($this->browser->getURL(), $data);
+			$this->browser->setFieldByName('AUTHTOKEN_PRESENT', (isset($this->permdata['otpdata']) ? 'true' : 'false'));
+			$this->browser->setFieldByName('ERROR_DETAILS', '');
+			$this->browser->setFieldByName('processreq', 'true');
+			$this->browser->setFieldByName('StateDataAttrNm', $document->find('input[name="StateDataAttrNm"]')->attr("value"));
+			$this->browser->setFieldByName('STORAGE_TYPE', 'Cookie');
+			$this->browser->setFieldByName('DIAGNOSTICS', 'Localstorage is supportedCookies are supported');
+
+			$page = $this->browser->submitFormById('AOTP_STATE');
 			$document = $this->getDocument($page);
 
 			// Finally, let's actually tell them some login data.
@@ -105,6 +110,9 @@
 				$num = str_replace('DIGIT', '', $name);
 
 				$this->browser->setFieldById($name, $this->securitynumber[$num]);
+			}
+			if (count($needed) == 0) {
+				die('Failed second hurdle.');
 			}
 			// Check if we need to enter a password/otp.
 			$passNeeded = $document->find('input#PASSWORD');
@@ -163,7 +171,6 @@
 			$page = $this->browser->submitFormById('returnform');
 
 			// Never save cookies, tesco bank is flakey as fuck.
-
 			return $this->isLoggedIn($page);
 		}
 
@@ -407,6 +414,7 @@ V8JS
 
 				return $this->updateTransactions($account, $historical, $historicalVerbose, true);
 			}
+
 			// Get last statement balance.
 			preg_match('#<strong>Statement balance</strong></td>[^"]+"normalText">([^<]+)</td>#', $page, $m);
 			$lastBalance = 0 - $this->parseBalance($m[1]);

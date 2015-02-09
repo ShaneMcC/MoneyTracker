@@ -25,6 +25,7 @@
 
 		public function import($bank) {
 			$accounts = $bank->getAccounts(true);
+			if (!is_array($accounts)) { return; }
 
 			foreach ($accounts as $a) {
 				$r = $this->db->accounts->select('accountkey')->where('accountkey', $a->getAccountKey());

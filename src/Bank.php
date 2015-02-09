@@ -61,7 +61,7 @@
 			$__simpleSocketContext = array();
 			$this->browser = new SimpleBrowser();
 			$this->browser->setParser(new SimplePHPPageBuilder());
-			$this->browser->setUserAgent('Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:29.0) Gecko/20100101 Firefox/29.0');
+			$this->browser->setUserAgent('Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:35.0) Gecko/20100101 Firefox/35.0');
 			if ($loadCookies) {
 				$this->loadCookies();
 			}
