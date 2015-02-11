@@ -64,8 +64,6 @@
 		 * @return Address to connect to.
 		 */
 		protected function resolveTescoAddress($host) {
-			var_dump($this->tescoDNS);
-
 			if (isset($this->tescoDNS[strtolower($host)])) {
 				if (empty($this->tescoDNS[strtolower($host)])) {
 					// Resolve once, remember forever.
