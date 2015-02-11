@@ -10,12 +10,15 @@
 	 * Code to scrape Tesco Bank to get Account and Transaction objects.
 	 */
 	class TescoBank extends WebBank {
-		private $account = '';
-		private $password = '';
-		private $securitynumber = '';
+		protected $account = '';
+		protected $password = '';
+		protected $securitynumber = '';
 
-		private $accounts = null;
-		private $accountLinks = array();
+		protected $accounts = null;
+		protected $accountLinks = array();
+		protected $tescoDNS = array('onlineservicing.creditcards.tescobank.com' => '',
+		                            'www.tescobank.com' => '',
+		                            'login.myproducts.tescobank.com' => '');
 
 		/**
 		 * Create a TescoBank.
@@ -41,6 +44,38 @@
 		 */
 		public function __toString() {
 			return 'TescoBank/' . $this->account;
+		}
+
+		/** {@inheritDoc} */
+		protected function newBrowser($loadCookies = true) {
+			parent::newBrowser($loadCookies);
+			$this->browser->setGetHostAddr(function ($host) { return $this->resolveTescoAddress($host); });
+		}
+
+		/**
+		 * This function will resolve addresses once, and then remember them
+		 * for the lifetime of the object. This gets around Tesco's fucky and
+		 * broken load-balancer set up.
+		 *
+		 * This only cares about tesco hosts, anything else is fair-game to
+		 * the system resolver.
+		 *
+		 * @param $host Host to look up
+		 * @return Address to connect to.
+		 */
+		protected function resolveTescoAddress($host) {
+			var_dump($this->tescoDNS);
+
+			if (isset($this->tescoDNS[strtolower($host)])) {
+				if (empty($this->tescoDNS[strtolower($host)])) {
+					// Resolve once, remember forever.
+					$this->tescoDNS[strtolower($host)] = gethostbyname($host);
+				}
+
+				return $this->tescoDNS[strtolower($host)];
+			}
+
+			return $host;
 		}
 
 		/**
@@ -174,7 +209,7 @@
 			return $this->isLoggedIn($page);
 		}
 
-		private function generateOTP($xml, $pass, $time) {
+		protected function generateOTP($xml, $pass, $time) {
 			$jsfile = file_get_contents(dirname(__FILE__) . '/TescoBank-OTP.js');
 
 			$v8 = new V8JS();

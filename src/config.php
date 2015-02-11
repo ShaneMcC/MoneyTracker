@@ -9,6 +9,7 @@
 	require_once(dirname(__FILE__) . '/banks/HSBCMerge.php');
 	require_once(dirname(__FILE__) . '/banks/Halifax.php');
 	require_once(dirname(__FILE__) . '/banks/TescoBank.php');
+	require_once(dirname(__FILE__) . '/banks/TescoBankMobile.php');
 
 	// Database info
 	$config['database']['type'] = 'mysql';
@@ -18,6 +19,8 @@
 	$config['database']['user'] = 'bankinfo';
 	$config['database']['pass'] = 'bankinfo';
 
+	// Debug mode on importer?
+	$config['importdebug'] = false;
 
 	// Templates directory.
 	$config['web']['templates'] = 'templates';

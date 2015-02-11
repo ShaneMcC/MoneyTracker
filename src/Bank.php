@@ -31,9 +31,11 @@
 		 */
 		abstract function updateTransactions($account, $historical = false, $historicalVerbose = true);
 
+		protected function getPermDataName() { return $this->__toString(); }
+
 		protected function getPermDataFile() {
 			$reflector = new ReflectionObject($this);
-			return dirname($reflector->getFileName()) . '/.permdata-' . str_replace('/', '_', $this->__toString());
+			return dirname($reflector->getFileName()) . '/.permdata-' . str_replace('/', '_', $this->getPermDataName());
 		}
 
 		protected function savePermData() {

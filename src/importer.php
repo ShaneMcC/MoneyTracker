@@ -17,10 +17,12 @@
 	class Importer {
 		private $db = null;
 		private $pdo = null;
+		private $debug = false;
 
-		public function __construct($dbdata) {
+		public function __construct($dbdata, $debug = false) {
 			$this->pdo = getPDO($dbdata);
 			$this->db = new NotORM($this->pdo);
+			$this->debug = $debug;
 		}
 
 		public function import($bank) {
@@ -85,7 +87,11 @@
 							unset($updateData['type']);
 						}
 
-						$result = $this->db->transactions->insert_update(array('hash' => $key), $transData, $updateData);
+						if ($this->debug) {
+							$result = false
+						} else {
+							$result = $this->db->transactions->insert_update(array('hash' => $key), $transData, $updateData);
+						}
 						if ($result == false) {
 							echo 'Failed to update: ', $transData['description'], ' [', $transData['typecode'], '] => ', $transData['amount'], ' (', date("Y-m-d H:i:s", $transData['time']),')', "\n";
 						} else {
@@ -102,7 +108,12 @@
 				$accData = $a->toArray();
 				$key = $accData['accountkey'];
 				unset($accData['accountkey']);
-				$result = $this->db->accounts->insert_update(array('accountkey' => $key), $accData, $accData);
+
+				if ($this->debug) {
+					$result = false
+				} else {
+					$result = $this->db->accounts->insert_update(array('accountkey' => $key), $accData, $accData);
+				}
 				if ($result == false) {
 					echo 'Failed to update account data for: ', $key, "\n";
 				} else {
