@@ -88,7 +88,7 @@
 						}
 
 						if ($this->debug) {
-							$result = false
+							$result = false;
 						} else {
 							$result = $this->db->transactions->insert_update(array('hash' => $key), $transData, $updateData);
 						}
@@ -110,7 +110,7 @@
 				unset($accData['accountkey']);
 
 				if ($this->debug) {
-					$result = false
+					$result = false;
 				} else {
 					$result = $this->db->accounts->insert_update(array('accountkey' => $key), $accData, $accData);
 				}
