@@ -15,6 +15,10 @@
 		private $password = '';
 		private $memorableinfo = '';
 
+		private $deviceId = '';
+		private $securityDomain = 'www.mobile.security.hsbc.co.uk';
+		private $saasDomain = 'www.saas.hsbc.co.uk';
+
 		private $accounts = null;
 		private $accountLinks = array();
 
@@ -31,6 +35,27 @@
 			$this->password = $password;
 			// The '.' is to push everything back one for login.
 			$this->memorableinfo = '.'.$memorableinfo;
+
+			$this->deviceId = $this->getDeviceData('eth0');
+		}
+
+		private function getDeviceData($iface) {
+			$data = array();
+
+			$mac = trim(file_get_contents('/sys/class/net/'.$iface.'/address'));
+			$ip = trim(exec('ip addr show dev '.$iface.' | grep "inet " | cut -d " " -f 6  | cut -f 1 -d "/"'));
+
+			return md5($mac . ' ' . $ip);
+		}
+
+		protected function newBrowser($loadCookies = true) {
+			parent::newBrowser($loadCookies);
+
+			$this->browser->setUserAgent('com.htsu.hsbcpersonalbanking/1.5.8.0 (Linux; U; Android 4.4.4; en; hammerhead) Apache-HttpClient/UNAVAILABLE (java 1.4)');
+			$this->browser->addHeader('native-app: htsu-rbwm-v1.5.8.0');
+			$this->browser->addHeader('device-type: Android 4.4.4');
+			$this->browser->addHeader('device-status: {"rooted":"false"}');
+			$this->browser->addHeader('device-id: Android_Nexus 5_' . $this->deviceId);
 		}
 
 		/**
@@ -69,13 +94,32 @@
 		 */
 		public function login($fresh = false) {
 			$this->newBrowser(false);
-			$page = $this->browser->get('https://www.hsbc.co.uk/1/2/mobile-1-5/pre-logon');
+			$config = $this->browser->get('https://' . $this->saasDomain . '/content_static/mobile/1/5/8/0/config.json?' . time());
 
-			$url = 'https://www.hsbc.co.uk/1/2/?idv_cmd=idv.Authentication&locale=en&devtype=M&platform=A&initialAccess=true&nextPage=ukpib.mobile.1.5.cam30.response&userid=' . $this->account . '&cookieuserid=false&CSA_DynamicBrandKey=MOBILE15&ver=11&json=&__locale=en&LANGTAG=en&COUNTRYTAG=US&platform=A&devtype=M';
-			$page = $this->browser->get($url);
-			$decoded = @json_decode($page);
+			$domainData = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.SaaSSecurityCommand&CHANNEL=MOBILE&SaaS_FUNCTION_NAME=DetermineSiteID&nextPage=MOBILE_RETRIEVE_DOMAIN_URL&locale=en', array(), false);
+			$this->securityDomain = $domainData->body->domainName;
 
-			$wanted = explode(',', $decoded->body->rccDigits);
+			$tokens = $this->hsbcPost('https://' . $this->saasDomain . '/1/2/?idv_cmd=idv.GetCommToken&nextPage=hsbc.pib.view-accounts&CHANNEL=MOBILE&function=Saas_Authentication', array('country' => 'UK', 'region' => 'HBEU', 'targetCam' => '30'), false);
+			$tokenData = array('__initialAccess' => 'true',
+				               '__initialLogon' => 'true',
+				               'SAAS_TOKEN_ID' => $tokens->body->SAAS_TOKEN_ID,
+				               'SAAS_TOKEN_ASSERTION_ID' => $tokens->body->SAAS_TOKEN_ASSERTION_ID,
+				               );
+			$cookieGetter = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.SaaSSecurityCommand&CHANNEL=MOBILE', $tokenData, false);
+
+			$loginData = array('initialAccess' => 'true',
+				               'nextPage' => 'MOBILE_CAM10_AUTHENTICATION',
+				               'cookieuserid' => 'false',
+				               '__locale' => 'en',
+				               'LANGTAG' => 'en',
+				               'COUNTRYTAG' => 'US',
+				               'userid' => $this->account,
+				               );
+			$initialLogin = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.Authentication&nextPage=MOBILE_CAM10_AUTHENTICATION&CHANNEL=MOBILE', $loginData, false);
+
+			if ($initialLogin == null) { return FALSE; }
+
+			$wanted = explode(',', $initialLogin->body->rccDigits);
 			$digits = array();
 			foreach ($wanted as $d) {
 				if ($d == '8') { $d = strlen($this->memorableinfo) - 1; }
@@ -84,17 +128,31 @@
 				$digits[] = $this->memorableinfo[$d];
 			}
 
+			$interimCookieGetter = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.AuthenticateAtMSFCommand&nextPage=MOBILE_CAM3040_FIRST&CHANNEL=MOBILE', array(), false);
 
-			$data = array('CSA_DynamicBrandKey' => 'MOBILE15',
+			$data = array('__logonFlag' => 'true',
+			              '__checkSOTPStatus' => 'true',
 			              'memorableAnswer' => $this->password,
 			              'password' => implode('', $digits),
 			              '__locale' => 'en',
 			              );
 
+			$decoded = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.Authentication&nextPage=MOBILE_CAM30_AUTHENTICATION&CHANNEL=MOBILE&__flag_logon_timeout=Y&devicestatus=true', $data, false);
 
-			$decoded = $this->hsbcPost('https://www.hsbc.co.uk/1/2/?idv_cmd=idv.Authentication', $data, false);
+			if ($decoded->body->lastLogonDate !== NULL) {
+				$interimTokens = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/SaaSMobileLogoutCAM0Resource/?CHANNEL=MOBILE', array(), false);
+				$newTokenData = array('SAAS_TOKEN_ID' => $interimTokens->body->SAAS_TOKEN_ID,
+				                      'SAAS_TOKEN_ASSERTION_ID' => $interimTokens->body->SAAS_TOKEN_ASSERTION_ID,
+				                      );
+				$newParams = $this->hsbcPost('https://' . $this->saasDomain . '/1/2/?idv_cmd=idv.SaaSSecurityCommand&CHANNEL=MOBILE&function=postCommToken', $newTokenData, false);
 
-			return $decoded !== NULL;
+				$cmdIn = $this->hsbcPost('https://' . $this->saasDomain . '/1/3/mobile-1-5/entitlement-enquiry?ver=1.1&json=true', array('cmd_in' => 'cmd_in'), false);
+				$menuRefresh = $this->hsbcPost('https://' . $this->saasDomain . '/1/3/mobile-1-5/scm?ver=1.1&json=true', array('__cmd-All_MenuRefresh' => '__cmd-All_MenuRefresh'), false);
+
+				return true;
+			}
+
+			return false;
 		}
 
 		public function isLoggedIn($page) {
@@ -198,7 +256,7 @@
 			$data = array('requestName' => 'ac_summary',
 			              '__cmd-All_MenuRefresh' => '__cmd-All_MenuRefresh',
 			              );
-			$decoded = $this->hsbcPost('https://www.hsbc.co.uk/1/3/mobile-1-5/accounts?CSA_DynamicBrandKey=MOBILE15', $data);
+			$decoded = $this->hsbcPost('https://' . $this->saasDomain . '/1/3/mobile-1-5/accounts?CSA_DynamicBrandKey=MOBILE15', $data);
 			if ($decoded == null) { return false; }
 
 			$accounts = array();
@@ -257,7 +315,8 @@
 			              'statement' => '0',
 			              );
 
-			$decoded = $this->hsbcPost('https://www.hsbc.co.uk/1/3/mobile-1-5/accounts?CSA_DynamicBrandKey=MOBILE15', $data);
+			$decoded = $this->hsbcPost('https://' . $this->saasDomain . '/1/3/mobile-1-5/accounts?CSA_DynamicBrandKey=MOBILE15', $data);
+
 			if ($decoded == null) { return false; }
 
 			$transactions = array();
