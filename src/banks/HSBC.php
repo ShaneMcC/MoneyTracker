@@ -14,6 +14,9 @@
 		private $securekey = '';
 		private $secretword = '';
 
+		private $securityDomain = 'www.security.hsbc.co.uk';
+		private $saasDomain = 'www.saas.hsbc.co.uk';
+
 		private $accounts = null;
 
 		/**
@@ -43,43 +46,74 @@
 		 * @return true if login was successful, else false.
 		 */
 		public function login($fresh = false) {
-			if ($fresh) {
-				$this->newBrowser(false);
-				$page = $this->browser->get('https://www.hsbc.co.uk/');
-				$page = $this->getDocument($page);
-
-				// Move to login page
-				$element = $page->find('a[title="Log on to Personal Internet Banking"');
-				$loginurl = $element->eq(0)->attr('href');
-				$page = $this->browser->get('https://www.hsbc.co.uk/' . $loginurl);
-			} else {
+			if (!$fresh) {
 				$this->newBrowser(true);
-				$page = $this->browser->get('https://www.hsbc.co.uk/1/2/personal/internet-banking?BlitzToken=blitz');
+				$page = $this->browser->get('https://' . $this->saasDomain . '/1/3/personal/online-banking?BlitzToken=blitz');
 				if ($this->isLoggedIn($page)) {
 					return true;
 				}
+			} else {
+				$this->newBrowser(false);
 			}
+
+			$page = $this->browser->get('https://www.hsbc.co.uk/');
+			$page = $this->getDocument($page);
+
+			// Move to login page
+			$element = $page->find('a[title="Log on to Personal Internet Banking"');
+			$loginurl = $element->eq(0)->attr('href');
+			$page = $this->browser->get('https://www.hsbc.co.uk/' . $loginurl);
 
 			// Fill out the form and submit it.
 			$this->browser->setFieldById('intbankingID', $this->account);
 			// $this->browser->setMaximumRedirects(1);
 			$page = $this->browser->submitFormById('logonForm');
+			// Submit a couple of SaaS forms.
+
+			while (preg_match('#document\.tempForm\.submit#Ums', $page)) {
+				$page = $this->browser->submitFormByName('tempForm');
+			}
+
+			$securityDomain = parse_url($this->browser->getUrl());
+			$this->securityDomain = $securityDomain['host'];
 
 			if ($this->securekey == '##') {
+				$this->browser->get('https://' . $this->securityDomain . '/gsa/IDV_CAM20_OTP_CHALLENGE/?__USER=withSecKey');
 				$this->securekey = getUserInput('Please enter the securekey code for '.$this->account.': ');
 				if ($this->securekey === false) {
 					return false;
 				}
+
+				// Set the fields
+				$this->browser->setFieldById('memorableAnswer', $this->secretword);
+				$this->browser->setFieldById('idv_OtpCredential', $this->securekey);
+			} else if (startsWith($this->securekey, '@')) {
+				$page = $this->browser->get('https://' . $this->securityDomain . '/gsa/IDV_CAM10TO30_AUTHENTICATION/?__USER=withOutSecKey');
+
+				if (!preg_match('#chalNums: \[([0-9], [0-9], [0-9])\]#Ums', $page, $matches)) {
+					return false;
+				}
+
+				$wanted = explode(',', $matches[1]);
+				$digits = array();
+				foreach ($wanted as $d) {
+					if ($d == '8') { $d = strlen($this->securekey) - 1; }
+					if ($d == '7') { $d = strlen($this->securekey) - 2; }
+
+					$digits[] = $this->securekey[$d];
+				}
+
+				$this->browser->setFieldById('memorableAnswer', $this->secretword);
+				$this->browser->setFieldById('password', implode('', $digits));
 			}
 
-			// Set the fields
-			$this->browser->setFieldById('passwd', $this->secretword);
-			$this->browser->setFieldById('secNumberInput', $this->securekey);
-
 			$page = $this->browser->clickSubmit('Continue');
-
-			// And now, "click to continue" (why ?!)
-			$page = $this->browser->get('https://www.hsbc.co.uk/1/2/personal/internet-banking?BlitzToken=blitz');
+			while (preg_match('#document\.tempForm\.submit#Ums', $page)) {
+				$page = $this->browser->submitFormByName('tempForm');
+			}
+			$bankDomain = parse_url($this->browser->getUrl());
+			$this->saasDomain = $bankDomain['host'];
+			$page = $this->browser->get('https://' . $this->saasDomain . '/1/3/HSBCINTEGRATION/welcome?BlitzToken=blitz');
 
 			// And done.
 			$this->saveCookies();
@@ -156,15 +190,15 @@
 
 			$this->accounts = array();
 
-			$page = $this->getPage('https://www.hsbc.co.uk/1/2/personal/internet-banking?BlitzToken=blitz');
+			$page = $this->getPage('https://' . $this->saasDomain . '/1/3/personal/online-banking?BlitzToken=blitz');
 
 			if (!$this->isLoggedIn($page)) { return $this->accounts; }
 
 			$page = $this->getDocument($page);
-
 			$accounts = array();
 
 			$accountdetails = $page->find('#jsAccountDetails');
+
 			$items = $page->find('span.hsbcDivletBoxRowText', $accountdetails);
 			for ($i = 0; $i < (count($items) / 4); $i++) {
 				$pos = ($i * 4);
@@ -311,9 +345,9 @@
 
 			$card = $account->getType() == 'CREDIT CARD';
 			if ($card) {
-				$page = $this->getPage('https://www.hsbc.co.uk/1/3/personal/internet-banking/credit-card-transactions?ActiveAccountKey=' . $account->getAccountNumber() . '&accountId=' . $account->getAccountNumber() . '&productType=CCA&BlitzToken=blitz');
+				$page = $this->getPage('https://' . $this->saasDomain . '/1/3/personal/online-banking/credit-card-transactions?ActiveAccountKey=' . $account->getAccountNumber() . '&accountId=' . $account->getAccountNumber() . '&productType=CCA&BlitzToken=blitz');
 			} else {
-				$page = $this->getPage('https://www.hsbc.co.uk/1/2/personal/internet-banking/recent-transaction?ActiveAccountKey=' . $accountKey . '&BlitzToken=blitz');
+				$page = $this->getPage('https://' . $this->saasDomain . '/1/3/personal/online-banking/recent-transaction?ActiveAccountKey=' . $accountKey . '&BlitzToken=blitz');
 			}
 			if (!$this->isLoggedIn($page)) { return false; }
 			$page = $this->getDocument($page);
@@ -511,7 +545,7 @@
 			// Now try the historical ones.
 			if ($historical) {
 				// Get the first page of the list of historical statements.
-				$page = $this->getPage('https://www.hsbc.co.uk/1/2/personal/internet-banking/previous-statements');
+				$page = $this->getPage('https://www.saas.hsbc.co.uk/1/3/personal/online-banking/previous-statements');
 				$page = $this->getDocument($page);
 				$nextLink = '';
 				$prevLink = '';
@@ -553,7 +587,7 @@
 						}
 						$pastStatements[] = $title;
 						// if ($cancontinue == false) { continue; }
-						$url = 'https://www.hsbc.co.uk'.$link->getAttribute('href');
+						$url = 'https://'.$this->saasDomain.$link->getAttribute('href');
 						// Bloody HTML Tidy...
 						$url = str_replace('&amp;', '&', $url);
 						$rpage = $this->getPage($url);
@@ -610,7 +644,7 @@
 								if ($historicalVerbose) {
 									$dlink = $urls->eq(0);
 									// HTML Tidy...
-									$url = 'https://www.hsbc.co.uk'.$dlink->attr('href');
+									$url = 'https://'.$this->saasDomain.$dlink->attr('href');
 									$url = str_replace('&amp;', '&', $url);
 									$dpage = $this->getPage($url);
 									$dpage = $this->getDocument($dpage);
@@ -684,7 +718,7 @@
 						if (count($links) > 0) {
 							foreach ($links as $link) {
 								if ($link->getAttribute('title') == 'Next set of statements') {
-									$nextLink = 'https://www.hsbc.co.uk'.$link->getAttribute('href');
+									$nextLink = 'https://'.$this->saasDomain.$link->getAttribute('href');
 								}
 							}
 						}
@@ -696,7 +730,7 @@
 						if (count($links) > 0) {
 							foreach ($links as $link) {
 								if ($link->getAttribute('title') == 'Previous set of statements') {
-									$prevLink = 'https://www.hsbc.co.uk'.$link->getAttribute('href');
+									$prevLink = 'https://'.$this->saasDomain.$link->getAttribute('href');
 								}
 							}
 						}

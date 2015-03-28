@@ -52,6 +52,7 @@
 
 	abstract class WebBank extends Bank {
 		protected $browser = null;
+		protected $cachedDNS = array();
 
 		public function __construct() { parent::__construct(); }
 
@@ -67,6 +68,24 @@
 			if ($loadCookies) {
 				$this->loadCookies();
 			}
+			$this->browser->setGetHostAddr(function ($host) { return $this->cacheResolveAddress($host); });
+		}
+
+		/**
+		 * This function will resolve addresses once, and then remember them
+		 * for the lifetime of the object. This gets around some fucky and
+		 * broken load-balancers.
+		 *
+		 * @param $host Host to look up
+		 * @return Address to connect to.
+		 */
+		protected function cacheResolveAddress($host) {
+			if (!isset($this->cachedDNS[strtolower($host)])) {
+				// Resolve once, remember forever.
+				$this->cachedDNS[strtolower($host)] = gethostbyname($host);
+			}
+
+			return $this->cachedDNS[strtolower($host)];
 		}
 
 		protected function getCookieFile() {
