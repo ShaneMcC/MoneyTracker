@@ -14,9 +14,10 @@
 		private $myDescription = '';
 		private $myExtra = '';
 		private $mySource = '';
+		private $myHidden = 0;
 		private $myTransactions = array();
 
-		public function __construct($source = '', $owner = '', $type = '', $sortcode = '', $accnumber = '', $balance = '', $available = '', $limits = '', $misc = '', $desc = '', $extra = '') {
+		public function __construct($source = '', $owner = '', $type = '', $sortcode = '', $accnumber = '', $balance = '', $available = '', $limits = '', $misc = '', $desc = '', $extra = '', $hidden = 0) {
 			$this->myOwner = $owner;
 			$this->myType = $type;
 			$this->mySortCode = $sortcode;
@@ -28,6 +29,7 @@
 			$this->myDescription = $desc;
 			$this->myExtra = $extra;
 			$this->mySource = $source;
+			$this->myHidden = $hidden;
 			$this->myTime = time();
 		}
 
@@ -58,7 +60,8 @@
 			             'available' => $this->myAvailable,
 			             'misc' => $this->myMisc,
 			             'extra' => $this->myExtra,
-			             'source' => $this->mySource);
+			             'source' => $this->mySource,
+			             'hidden' => $this->myHidden);
 		}
 
 		static function fromArray($array) {
@@ -74,6 +77,7 @@
 			$obj->myMisc = $array['misc'];
 			$obj->myExtra = $array['extra'];
 			$obj->mySource = $array['source'];
+			$obj->myHidden = $array['hidden'];
 
 			return $obj;
 		}
@@ -91,9 +95,14 @@
 		function getDescription() { return $this->myDescription; }
 		function getExtra() { return $this->myExtra; }
 		function getSource() { return $this->mySource; }
+		function getHidden() { return $this->myHidden; }
 
 		function getDisplayName() {
 			return (!startsWith($this->mySortCode, '00-') ? $this->mySortCode.' ' : '') . $this->myAccountNumber;
+		}
+
+		function getDescriptionOrType() {
+			return !empty($this->myDescription) ? $this->myDescription : $this->myType;
 		}
 
 		function setOwner($newValue) { $this->myOwner = $newValue; }
@@ -108,6 +117,7 @@
 		function setDescription($newValue) { $this->myDescription = $newValue; }
 		function setExtra($newValue) { $this->myExtra = $newValue; }
 		function setSource($newValue) { $this->mySource = $newValue; }
+		function setHidden($newValue) { $this->myHidden = $newValue; }
 
 		function addTransaction($transaction) { $this->myTransactions[] = $transaction; }
 		function clearTransactions() { $this->myTransactions = array(); }

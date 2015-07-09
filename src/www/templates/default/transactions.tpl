@@ -1,7 +1,9 @@
 	@$totalcount = 0;
 	@foreach ($accounts as $account) {
+		@ if ($account->getAccountKey() != $wantedAccount && !$showHiddenAccounts && $account->getHidden() == 1) { continue; }
+
 		<div id="transactions_{{$account->getAccountKey()}}">
-		<h1>{{$account->getFullNumber()}}</h1>
+		<h1>{{$account->getFullNumber()}} <small>{{$account->getDescriptionOrType()}}</small></h1>
 
 		<div class="table-responsive">
 		<table class="table table-striped table-bordered table-hover table-condensed transactions sortable">

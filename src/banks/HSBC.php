@@ -150,8 +150,16 @@
 			if (empty($balance)) { return ''; }
 			$negative = strpos($balance, '-') !== FALSE;
 			$balance = str_replace(',', '', $balance);
-			preg_match('@([0-9]+.[0-9]+)$@', trim($balance), $matches);
-			return $negative ? 0 - $matches[1] : $matches[1];
+
+			$balance = trim($balance);
+			$bal = explode(' ', $balance);
+			$negative = !isset($bal[1]) || $bal[1] != 'CR';
+
+			if (preg_match('@([0-9]+.[0-9]+)$@', $bal[0], $matches)) {
+				return $negative ? 0 - $matches[1] : $matches[1];
+			} else {
+				die('INVALID BALANCE: "'.$balance.'"' . "\n");
+			}
 		}
 
 		/**

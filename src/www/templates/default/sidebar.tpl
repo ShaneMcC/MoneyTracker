@@ -32,6 +32,11 @@
 				<li class="{{$class}}"><a style="padding-left: 15px;" class="periodselection" data-period="{{$period}}"><span class="glyphicon glyphicon-dashboard"></span> {{$data['name']}}</a></li>
 			@}
 		@ }
+
+		<li class="nav-header">Hidden Accounts</li>
+
+		<li class="{{ isset($showHiddenAccounts) && $showHiddenAccounts ? "active" : "" }}"><a style="padding-left: 15px;" class="showHiddenAccounts"><span class="glyphicon glyphicon-eye-open"></span> Show Hidden Accounts</a></li>
+		<li class="{{ !isset($showHiddenAccounts) || !$showHiddenAccounts ? "active" : "" }}"><a style="padding-left: 15px;" class="hideHiddenAccounts"><span class="glyphicon glyphicon-eye-close"></span> Hide Hidden Accounts</a></li>
 	</ul>
 </div>
 
@@ -39,6 +44,18 @@
 	$('.periodselection').click(function() {
 		var url = $.jurlp($(document).jurlp("url").toString());
 		url.query({'period': $(this).data('period')});
+		window.location = url.href;
+	});
+
+	$('.showHiddenAccounts').click(function() {
+		var url = $.jurlp($(document).jurlp("url").toString());
+		url.query({'showHiddenAccounts': true});
+		window.location = url.href;
+	});
+
+	$('.hideHiddenAccounts').click(function() {
+		var url = $.jurlp($(document).jurlp("url").toString());
+		url.query({'showHiddenAccounts': false});
 		window.location = url.href;
 	});
 </script>

@@ -8,6 +8,9 @@
 			$q = $this->getQuery();
 			$this->tf()->setVar('thisPeriod', isset($q['period']) ? $q['period'] : 'last7days');
 
+			$showHiddenAccounts = isset($q['showHiddenAccounts']) ? parseBool($q['showHiddenAccounts']) : false;
+			$this->tf()->setVar('showHiddenAccounts', $showHiddenAccounts);
+
 			// Prepare the sidebar menu.
 			$sidebar = $this->tf()->getVar('sidebar');
 			$section = array('__HEADER__' => 'Transactions');
@@ -24,8 +27,10 @@
 			$p = $this->getParams();
 			if (isset($p['sub']) && !empty($p['sub'])) {
 				$accounts = array($db->getAccount($p['sub']));
+				$this->tf()->setVar('wantedAccount', $p['sub']);
 			} else {
 				$accounts = $db->getAccounts();
+				$this->tf()->setVar('wantedAccount', '');
 			}
 
 			$tags = array();
