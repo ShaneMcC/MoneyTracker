@@ -2,22 +2,22 @@
 	require_once(dirname(__FILE__) . '/Transaction.php');
 
 	class Account {
-		private $myOwner = '';
-		private $myType = '';
-		private $mySortCode = '';
-		private $myAccountNumber = '';
-		private $myBalance = '';
-		private $myTime = '';
-		private $myAvailable = '';
-		private $myLimits = '';
-		private $myMisc = '';
-		private $myDescription = '';
-		private $myExtra = '';
-		private $mySource = '';
-		private $myHidden = 0;
+		private $myOwner = null;
+		private $myType = null;
+		private $mySortCode = null;
+		private $myAccountNumber = null;
+		private $myBalance = null;
+		private $myTime = null;
+		private $myAvailable = null;
+		private $myLimits = null;
+		private $myMisc = null;
+		private $myDescription = null;
+		private $myExtra = null;
+		private $mySource = null;
+		private $myHidden = null;
 		private $myTransactions = array();
 
-		public function __construct($source = '', $owner = '', $type = '', $sortcode = '', $accnumber = '', $balance = '', $available = '', $limits = '', $misc = '', $desc = '', $extra = '', $hidden = 0) {
+		public function __construct($source = null, $owner = null, $type = null, $sortcode = null, $accnumber = null, $balance = null, $available = null, $limits = null, $misc = null, $desc = null, $extra = null, $hidden = null) {
 			$this->myOwner = $owner;
 			$this->myType = $type;
 			$this->mySortCode = $sortcode;
@@ -49,19 +49,27 @@
 		}
 
 		function toArray() {
-			return array('accountkey' => $this->getAccountKey(),
-			             'sortcode' => $this->mySortCode,
-			             'accountnumber' => $this->myAccountNumber,
-			             'type' => $this->myType,
-			             'description' => $this->myDescription,
-			             'owner' => $this->myOwner,
-			             'lastbalance' => $this->myBalance,
-			             'limits' => $this->myLimits,
-			             'available' => $this->myAvailable,
-			             'misc' => $this->myMisc,
-			             'extra' => $this->myExtra,
-			             'source' => $this->mySource,
-			             'hidden' => $this->myHidden);
+			$result = array('accountkey' => $this->getAccountKey(),
+			                'sortcode' => $this->mySortCode,
+			                'accountnumber' => $this->myAccountNumber,
+			                'type' => $this->myType,
+			                'description' => $this->myDescription,
+			                'owner' => $this->myOwner,
+			                'lastbalance' => $this->myBalance,
+			                'limits' => $this->myLimits,
+			                'available' => $this->myAvailable,
+			                'misc' => $this->myMisc,
+			                'extra' => $this->myExtra,
+			                'source' => $this->mySource,
+			                'hidden' => $this->myHidden);
+
+			foreach (array_keys($result) as $k) {
+				if ($result[$k] === null) { unset($result[$k]); }
+			}
+
+			if (!isset($result['accountnumber']) || !isset($result['source'])) { die('Bad Account'); }
+
+			return $result;
 		}
 
 		static function fromArray($array) {
