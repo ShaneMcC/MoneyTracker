@@ -147,18 +147,18 @@
 		 * @return Correct balance (eg: "1.00" or "-1.00")
 		 */
 		private function parseNiceBalance($balance) {
+			$original = $balance;
 			if (empty($balance)) { return ''; }
 			$negative = strpos($balance, '-') !== FALSE;
 			$balance = str_replace(',', '', $balance);
 
 			$balance = trim($balance);
 			$bal = explode(' ', $balance);
-			$negative = !isset($bal[1]) || $bal[1] != 'CR';
 
 			if (preg_match('@([0-9]+.[0-9]+)$@', $bal[0], $matches)) {
 				return $negative ? 0 - $matches[1] : $matches[1];
 			} else {
-				die('INVALID BALANCE: "'.$balance.'"' . "\n");
+				die('INVALID BALANCE: "'.$original.'"' . "\n");
 			}
 		}
 
@@ -391,7 +391,13 @@
 			}
 
 			if (isset($details['current balance'])) {
-				$account->setBalance(0 - $this->parseNiceBalance(strip_tags($details['current balance'])));
+				$givenBalance = strip_tags($details['current balance']);
+				$currentbalance = $this->parseNiceBalance($givenBalance);
+				$val = trim(strip_tags($currentbalance));
+				$val = explode(' ', $val);
+				$inCredit = isset($val[1]) && $val[1] == 'CR';
+				if (!$inCredit) { $currentbalance = 0 - $currentbalance; }
+				$account->setBalance($currentbalance);
 			}
 			if (isset($details['current limit'])) {
 				$account->setLimits('Credit Limit: '.$this->parseNiceBalance(strip_tags($details['current limit'])));
