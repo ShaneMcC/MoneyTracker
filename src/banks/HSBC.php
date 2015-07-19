@@ -393,7 +393,7 @@
 			if (isset($details['current balance'])) {
 				$givenBalance = strip_tags($details['current balance']);
 				$currentbalance = $this->parseNiceBalance($givenBalance);
-				$val = trim(strip_tags($currentbalance));
+				$val = trim(strip_tags($givenBalance));
 				$val = explode(' ', $val);
 				$inCredit = isset($val[1]) && $val[1] == 'CR';
 				if (!$inCredit) { $currentbalance = 0 - $currentbalance; }
