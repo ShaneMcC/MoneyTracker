@@ -104,8 +104,8 @@
 			@$transNumber = 1 + ($transaction->getTime() - strtotime(date("Y-m-d", $transaction->getTime())));
 
 		chartdata[chartID].addRow([
-				{v:new Date({{$transaction->getTime()}} * 1000), f:""},
-				{{$transaction->getBalance()}},
+				{v:new Date({{$transaction->getTime()}} * 1000), f:"{{date("Y-m-d", $transaction->getTime()).' ('.money_format('%.2n', $transaction->getAmount()).')'}}"},
+				{v:{{$transaction->getBalance()}}, f:"{{money_format('%.2n', $transaction->getBalance())}}"},
 			]);
 		@}
 
