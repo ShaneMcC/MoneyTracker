@@ -224,7 +224,7 @@
 				// Get More Data
 				$req = '[{"customerId":null,"productCategory":"' . $prod->productCategory . '","productId":"' . $prod->productId . '","productType":"' . $prod->productType . '"}]';
 				$details = @json_decode($this->browser->post('https://mob.tescobank.com/broker/api/products/' . $this->myID, array('products' => $req)));
-				if ($details == null) { continue; }
+				if ($details == null || property_exists($details, 'errorResponse')) { continue; }
 
 				$account->setSortCode('00-00-01');
 				$account->setAccountNumber($details->products[0]->cardNumber);

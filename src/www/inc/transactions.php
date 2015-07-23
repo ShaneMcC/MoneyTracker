@@ -6,7 +6,7 @@
 			$this->tf()->setVar('title', 'Money Tracker :: Transactions');
 			$this->tf()->setVar('showPeriods', true);
 			$q = $this->getQuery();
-			$this->tf()->setVar('thisPeriod', isset($q['period']) ? $q['period'] : 'last7days');
+			$this->tf()->setVar('thisPeriod', isset($q['period']) ? $q['period'] : 'last14days');
 
 			$showHiddenAccounts = isset($q['showHiddenAccounts']) ? parseBool($q['showHiddenAccounts']) : false;
 			$this->tf()->setVar('showHiddenAccounts', $showHiddenAccounts);
@@ -25,7 +25,9 @@
 			$db = $this->tf()->getVar('db', null);
 
 			$p = $this->getParams();
+			$singleAccount = false;
 			if (isset($p['sub']) && !empty($p['sub'])) {
+				$singleAccount = true;
 				$accounts = array($db->getAccount($p['sub']));
 				$this->tf()->setVar('wantedAccount', $p['sub']);
 			} else {
@@ -42,7 +44,7 @@
 
 			$params = $this->getQuery();
 			$this->tf()->setVar('hideEmpty', isset($params['period']));
-			$periodInput = isset($params['period']) ? $params['period'] : 'last7days';
+			$periodInput = isset($params['period']) ? $params['period'] : 'last14days';
 			list($period, $start, $end) = getPeriod($periodInput);
 			$this->tf()->setVar('start', $start);
 			$this->tf()->setVar('end', $end);
@@ -56,6 +58,11 @@
 			$this->tf()->setVar('onlyUntagged', isset($params['untagged']));
 			$this->tf()->setVar('filtered', isset($params['untagged']));
 			$this->tf()->get('transactions')->display();
+
+			if ($singleAccount && count($accounts) > 0) {
+				$this->tf()->setVar('account', $accounts[0]);
+				$this->tf()->get('chart_balance')->display();
+			}
 		}
 	}
 ?>

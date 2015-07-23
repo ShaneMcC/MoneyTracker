@@ -45,7 +45,7 @@
 						if (meta_{{$type}}[row]['tagid']) {
 					@ }
 						period = url.query()['period'];
-						if (period == undefined) { period = 'last7days'; }
+						if (period == undefined) { period = 'last14days'; }
 						@ if ($data['hascolumns']) {
 							window.location = '{[getWebLocation]}taggedtransactions/' + meta_{{$type}}['tagid'][col] + '?period=' + period;
 						@ } else {

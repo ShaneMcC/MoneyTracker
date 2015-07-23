@@ -12,7 +12,7 @@
 
 			$this->tf()->setVar('showPeriods', true);
 			$q = $this->getQuery();
-			$this->tf()->setVar('thisPeriod', isset($q['period']) ? $q['period'] : 'last7days');
+			$this->tf()->setVar('thisPeriod', isset($q['period']) ? $q['period'] : 'last14days');
 		}
 
 		/** {@inheritDoc} */
@@ -48,7 +48,7 @@
 
 			$params = $this->getQuery();
 			$this->tf()->setVar('hideEmpty', true);
-			$periodInput = isset($params['period']) ? $params['period'] : 'last7days';
+			$periodInput = isset($params['period']) ? $params['period'] : 'last14days';
 			list($period, $start, $end) = getPeriod($periodInput);
 			$this->tf()->setVar('start', $start);
 			$this->tf()->setVar('end', $end);

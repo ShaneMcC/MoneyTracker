@@ -1,10 +1,7 @@
 	@$totalcount = 0;
 	@foreach ($accounts as $account) {
-		@ if ($account->getAccountKey() != $wantedAccount && !$showHiddenAccounts && $account->getHidden() == 1) { continue; }
-
 		<div id="transactions_{{$account->getAccountKey()}}">
-		<h1>{{$account->getFullNumber()}} <small>{{$account->getDescriptionOrType()}}</small></h1>
-
+		<h1>{{$account->getFullNumber()}} <small>{{$account->getDescriptionOrType()}} <a id="chartlink_chart_balance" style="display: none" href="#containerchart_balance"><span class="glyphicon glyphicon-stats"/></small></a></h1>
 		<div class="table-responsive">
 		<table class="table table-striped table-bordered table-hover table-condensed transactions sortable">
 		<thead>
@@ -23,6 +20,7 @@
 		@$lastBalance = null;
 		@$count = 0;
 		@foreach ($account->getTransactions() as $transaction) {
+			{-- TODO: This needs to be handled by the class not the template. --}
 			@if ($transaction->getTime() < $start) { continue; }
 			@if ($transaction->getTime() > $end) { continue; }
 			@if (!isStringMatch($transaction->getDescription(), $searchstring)) { continue; }

@@ -55,6 +55,10 @@
 			                                             'start' => strtotime('-7 days 00:00:00'),
 			                                             'end' => time()
 			                                             ),
+			                        'last14days' => array('name' => 'Last 14 days',
+			                                             'start' => strtotime('-14 days 00:00:00'),
+			                                             'end' => time()
+			                                             ),
 			                        'last180days' => array('name' => 'Last 180 days',
 			                                             'start' => strtotime('-180 days 00:00:00'),
 			                                             'end' => time()
@@ -113,7 +117,7 @@
 		$periods = getValidPeriods();
 
 		if (empty($name) || !isset($periods[$name])) {
-			$name = 'last7days';
+			$name = 'last14days';
 		}
 
 		return array($periods[$name]['name'], $periods[$name]['start'], $periods[$name]['end']);

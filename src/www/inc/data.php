@@ -6,7 +6,7 @@
 			$this->tf()->setVar('title', 'Money Tracker :: Data');
 			$this->tf()->setVar('showPeriods', true);
 			$q = $this->getQuery();
-			$this->tf()->setVar('thisPeriod', isset($q['period']) ? $q['period'] : 'last7days');
+			$this->tf()->setVar('thisPeriod', isset($q['period']) ? $q['period'] : 'last14days');
 		}
 
 		/** {@inheritDoc} */
