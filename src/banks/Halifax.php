@@ -45,16 +45,19 @@
 		 * @return true if login was successful, else false.
 		 */
 		public function login($fresh = false) {
-			if ($fresh) {
-				$this->newBrowser(false);
-				$page = $this->browser->get('https://www.halifax-online.co.uk/');
-				$page = $this->getDocument($page);
-			} else {
+			if (!$fresh) {
 				$this->newBrowser(true);
 				$page = $this->browser->get('https://secure.halifax-online.co.uk/personal/a/account_overview_personal/');
 				if ($this->isLoggedIn($page)) {
 					return true;
+				} if ($this->signedOut($page)) {
+					$fresh = true;
 				}
+			}
+			if ($fresh) {
+				$this->newBrowser(false);
+				$page = $this->browser->get('https://www.halifax-online.co.uk/');
+				$page = $this->getDocument($page);
 			}
 
 			// Fill out the form and submit it.
@@ -68,6 +71,7 @@
 				$this->browser->setFieldById('frmentermemorableinformation1:strEnterMemorableInformation_memInfo1', '&nbsp;' . strtolower($this->memorableinfo[$matches[1]]));
 				$this->browser->setFieldById('frmentermemorableinformation1:strEnterMemorableInformation_memInfo2', '&nbsp;' . strtolower($this->memorableinfo[$matches[2]]));
 				$this->browser->setFieldById('frmentermemorableinformation1:strEnterMemorableInformation_memInfo3', '&nbsp;' . strtolower($this->memorableinfo[$matches[3]]));
+
 				$page = $this->browser->submitFormById('frmentermemorableinformation1', array('frmentermemorableinformation1:btnContinue' => null));
 
 				// And done.
@@ -76,6 +80,10 @@
 			}
 
 			return false;
+		}
+
+		private function signedOut($page) {
+			return (strpos($page, 'Sorry, we\'ve had to sign you out') !== FALSE);
 		}
 
 		public function isLoggedIn($page) {
@@ -145,12 +153,12 @@
 				$type = $page->find('h2 a img', $items->eq($i))->attr("alt");
 
 				$numbers  = $this->cleanElement($page->find('p.numbers', $items->eq($i)));
-				preg_match('@Sort Code</span>([0-9]{2}-[0-9]{2}-[0-9]{2}), <span class="[^"]+">Account Number</span> ([0-9]+)@', $numbers, $matches);
+				preg_match('@Sort Code</span>([0-9]{2}-[0-9]{2}-[0-9]{2})[^,]+, <span class="[^"]+">Account Number</span> ([0-9]+)@', $numbers, $matches);
 				// var_dump($numbers);
 				if (!isset($matches[1])) { continue; }
 				$sortcode = $matches[1];
 				$number = $matches[2];
-				$balance = $this->cleanElement($page->find('div.accountBalance span.balanceShowMeAnchor', $items->eq($i)));
+				$balance = $this->cleanElement($page->find('div.accountBalance p.balance', $items->eq($i)));
 				$balance = $this->parseBalance($balance);
 
 				// Finally, create an account object.
@@ -253,12 +261,12 @@
 		public function updateTransactions($account, $historical = false, $historicalVerbose = true) {
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
-			$page = $this->getPage('https://secure.halifax-online.co.uk/' . $this->accountLinks[$accountKey]);
+			$page = $this->getPage('https://secure.halifax-online.co.uk' . $this->accountLinks[$accountKey]);
 			if (!$this->isLoggedIn($page)) { return false; }
 			$page = $this->getDocument($page);
 
-			$available = strip_tags($this->cleanElement($page->find('div.accountBalance')));
-			if (preg_match('@Money available:[^0-9]*([0-9]+.[0-9]+)@', $available, $matches)) {
+			$available = strip_tags($this->cleanElement($page->find('span.manageMyAccountsFaShowMeAnchor')->parent()));
+			if (preg_match('@Money[\s]available:[^0-9]*([0-9]+.[0-9]+)@', $available, $matches)) {
 				$account->setAvailable($matches[1]);
 			}
 			$transactions = $this->extractTransactions($page);
