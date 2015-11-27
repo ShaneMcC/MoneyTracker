@@ -57,15 +57,21 @@
 					$v1Hash = $t->getHash(true, false);
 					$v2Hash = $t->getHash(false, false);
 					$v3Hash = $t->getHash(false, true);
+					$convert = false;
 
 					echo "\t", 'Found: ', $r['hash'], ' - ', $r['description'], "\n";
 					if ($r['hash'] == $v1Hash) {
 						echo "\t\t", 'Converting from v1 Hash to ';
+						$convert = true;
 					} else if ($r['hash'] == $v2Hash) {
 						echo "\t\t", 'Converting from v2 Hash to ';
+						$convert = true;
 					}
-					echo 'v3 Hash: ', $v3Hash, "\n";
-					$orm->transactions->where('hash', $r['hash'])->update(array('hash' => $v3Hash));
+
+					if ($convert) {
+						echo 'v3 Hash: ', $v3Hash, "\n";
+						$orm->transactions->where('hash', $r['hash'])->update(array('hash' => $v3Hash));
+					}
 				}
 			}
 
