@@ -1,12 +1,14 @@
 <?php
+	define('CURRENT_DB_VERSION', 3);
 
 	/**
 	 * Get a PDO instance using the given db data.
 	 *
 	 * @param $dbdata Connection data
+	 * @param $checkVersion Check the DB Version or not?
 	 * @return a new PDO instance
 	 */
-	function getPDO($dbdata = null) {
+	function getPDO($dbdata = null, $checkVersion = true) {
 		if (!is_array($dbdata)) { $dbdata = array(); }
 
 		$type = isset($dbdata['type']) ? $dbdata['type'] : 'type';
@@ -16,7 +18,26 @@
 		$user = isset($dbdata['user']) ? $dbdata['user'] : 'bankinfo';
 		$pass = isset($dbdata['pass']) ? $dbdata['pass'] : 'bankinfo';
 
-		return new PDO($type . ':host=' . $server . ';port=' . $port . ';dbname=' . $db, $user, $pass);
+		$pdo = new PDO($type . ':host=' . $server . ';port=' . $port . ';dbname=' . $db, $user, $pass);
+		if ($checkVersion && getDBVersion($pdo) != CURRENT_DB_VERSION) {
+			throw new Exception('Database version is not compatible, please run upgrade.php');
+		} else {
+			return $pdo;
+		}
+	}
+
+	/**
+	 * This function gets the current database version.
+	 *
+	 * @param $pdo Database to check.
+	 * @return Database version.
+	 */
+	function getDBVersion($pdo) {
+		$orm = new NotORM($pdo);
+
+		$version = $orm->meta->select('metavalue')->where('metakey', 'DBVersion');
+		$row = $version->fetch();
+		return ($row === false) ? 0 : $row['metavalue'];
 	}
 
 	/**

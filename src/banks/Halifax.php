@@ -87,7 +87,11 @@
 		}
 
 		public function isLoggedIn($page) {
-			return (strpos($page, 'Securely signed in') !== FALSE);
+			return  (strpos($page, 'Securely signed in') !== FALSE) || (strpos($page, 'Last signed in') !== FALSE);
+		}
+
+		private function is2015style($page) {
+			return (strpos($page, 'Last signed in') !== FALSE);
 		}
 
 		/**
@@ -141,24 +145,40 @@
 
 			$page = $this->getPage('https://secure.halifax-online.co.uk/personal/a/account_overview_personal/');
 			if (!$this->isLoggedIn($page)) { return $this->accounts; }
+			$is2015 = $this->is2015style($page);
 			$page = $this->getDocument($page);
 
 			$accounts = array();
 
-			$accountdetails = $page->find('#lstAccLst');
-			$items = $page->find('li.clearfix', $accountdetails);
-			$owner = $this->cleanElement($page->find('p.user span.name'));
+			if ($is2015) {
+				$items = $page->find('div.des-m-sat-xx-account-information');
+				$owner = $this->cleanElement($page->find('span.m-hf-02-name'));
+			} else {
+				$accountdetails = $page->find('#lstAccLst');
+				$items = $page->find('li.clearfix', $accountdetails);
+				$owner = $this->cleanElement($page->find('p.user span.name'));
+			}
 			for ($i = 0; $i < count($items); $i++) {
 				// Get the values
-				$type = $page->find('h2 a img', $items->eq($i))->attr("alt");
+				if ($is2015) {
+					$type = $page->find('dd.account-name a', $items->eq($i))->attr("data-wt-ac");
 
-				$numbers  = $this->cleanElement($page->find('p.numbers', $items->eq($i)));
-				preg_match('@Sort Code</span>([0-9]{2}-[0-9]{2}-[0-9]{2})[^,]+, <span class="[^"]+">Account Number</span> ([0-9]+)@', $numbers, $matches);
-				// var_dump($numbers);
+					$numbers  = $this->cleanElement($page->find('div.section', $items->eq($i)));
+					preg_match('@([0-9]{2}-[0-9]{2}-[0-9]{2}).*([0-9]{8})@ims', strip_tags($numbers), $matches);
+				} else {
+					$type = $page->find('h2 a img', $items->eq($i))->attr("alt");
+					$numbers  = $this->cleanElement($page->find('p.numbers', $items->eq($i)));
+					preg_match('@Sort Code</span>([0-9]{2}-[0-9]{2}-[0-9]{2})[^,]+, <span class="[^"]+">Account Number</span> ([0-9]+)@', $numbers, $matches);
+				}
 				if (!isset($matches[1])) { continue; }
 				$sortcode = $matches[1];
 				$number = $matches[2];
-				$balance = $this->cleanElement($page->find('div.accountBalance p.balance', $items->eq($i)));
+
+				if ($is2015) {
+					$balance = $this->cleanElement($page->find('p.balance span', $items->eq($i)));
+				} else {
+					$balance = $this->cleanElement($page->find('div.accountBalance p.balance', $items->eq($i)));
+				}
 				$balance = $this->parseBalance($balance);
 
 				// Finally, create an account object.
@@ -171,10 +191,25 @@
 				$account->setBalance($balance);
 
 				$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
-				$this->accountLinks[$accountKey] = $page->find('h2 a', $items->eq($i))->attr("href");
+				if ($is2015) {
+					$this->accountLinks[$accountKey] = $page->find('a#lnkAccName_des-m-sat-xx-1', $items->eq($i))->attr("href");
+				} else {
+					$this->accountLinks[$accountKey] = $page->find('h2 a', $items->eq($i))->attr("href");
+				}
 
-				$overdraft = $this->parseBalance($this->cleanElement($page->find('div.accountBalance p.accountMsg', $items->eq($i))));
-				$account->setLimits('Overdraft: ' . $overdraft);
+				if ($is2015) {
+					$acctvalues = $page->find('table.account-values', $items->eq($i));
+					$text = strip_tags($acctvalues->html());
+					if (preg_match('@Money available including your[^0-9]+([0-9]+)[^0-9]+?overdraft@ims', $text, $matches)) {
+						$account->setLimits('Overdraft: ' . $matches[1]);
+					}
+
+					$available = $page->find('th.available-balance', $acctvalues);
+					$account->setAvailable($this->parseBalance($this->cleanElement($available)));
+				} else {
+					$overdraft = $this->parseBalance($this->cleanElement($page->find('div.accountBalance p.accountMsg', $items->eq($i))));
+					$account->setLimits('Overdraft: ' . $overdraft);
+				}
 
 				if ($transactions) {
 					$this->updateTransactions($account, $historical, $historicalVerbose);
@@ -248,6 +283,80 @@
 			return $transactions;
 		}
 
+		private function extractTransactions2015($page) {
+			$transactions = array();
+
+			// Now get the transactions.
+			$items = $page->find('table#statement-table tbody tr.rt-row');
+			foreach ($items as $row) {
+				echo 'Got Item', "\n";
+				$columns = pq($row, $page)->find('td');
+
+				// Pull out the data
+				$transaction['date'] = $this->cleanElement($columns->eq(0));
+				$desc = $columns->eq(1);
+				$transaction['description'] = $this->cleanElement($columns->eq(1));
+				$transaction['typecode'] = $this->cleanElement($columns->eq(2));
+				$transaction['type'] = $this->getType($transaction['typecode']);
+
+				$transaction['in'] = str_replace(',', '', $this->cleanElement($columns->eq(3)));
+				$transaction['out'] = str_replace(',', '', $this->cleanElement($columns->eq(4)));
+				$transaction['balance'] = str_replace(',', '', $this->cleanElement($columns->eq(5)));
+				$transaction = $this->cleanTransaction($transaction);
+
+				$transactions[] = $transaction;
+			}
+
+			return $transactions;
+		}
+
+		private function getType($typecode) {
+			$typecodes['BGC'] = 'Bank Giro Credit';
+			$typecodes['BNS'] = 'Bonus';
+			$typecodes['BP '] = 'Bill Payment';
+			$typecodes['CHG'] = 'Charge';
+			$typecodes['CHQ'] = 'Cheque';
+			$typecodes['COM'] = 'Commission';
+			$typecodes['COR'] = 'Correction';
+			$typecodes['CPT'] = 'Cashpoint';
+			$typecodes['CSH'] = 'Cash';
+			$typecodes['CSQ'] = 'Cash/Cheque';
+			$typecodes['DD'] = 'Direct Debit';
+			$typecodes['DEB'] = 'Debit Card';
+			$typecodes['DEP'] = 'Deposit';
+			$typecodes['EFT'] = 'EFTPOS (electronic funds transfer at point of sale)';
+			$typecodes['EUR'] = 'Euro Cheque';
+			$typecodes['FE'] = 'Foreign Exchange';
+			$typecodes['FEE'] = 'Fixed Service Charge';
+			$typecodes['FPC'] = 'Faster Payment charge';
+			$typecodes['FPI'] = 'Faster Payments Incoming';
+			$typecodes['FPO'] = 'Faster Payments Outgoing';
+			$typecodes['IB'] = 'Internet Banking';
+			$typecodes['INT'] = 'Interest';
+			$typecodes['MPI'] = 'Mobile Payment incoming';
+			$typecodes['MPO'] = 'Mobile Payment outgoing';
+			$typecodes['MTG'] = 'Mortgage';
+			$typecodes['NS'] = 'National Savings Dividend';
+			$typecodes['NSC'] = 'National Savings Certificates';
+			$typecodes['OTH'] = 'Other';
+			$typecodes['PAY'] = 'Payment';
+			$typecodes['PSB'] = 'Premium Savings Bonds';
+			$typecodes['PSV'] = 'Paysave';
+			$typecodes['SAL'] = 'Salary';
+			$typecodes['SPB'] = 'Cashpoint';
+			$typecodes['SO'] = 'Standing Order';
+			$typecodes['STK'] = 'Stocks/Shares';
+			$typecodes['TD'] = 'Dep Term Dec';
+			$typecodes['TDG'] = 'Term Deposit Gross Interest';
+			$typecodes['TDI'] = 'Dep Term Inc';
+			$typecodes['TDN'] = 'Term Deposit Net Interest';
+			$typecodes['TFR'] = 'Transfer';
+			$typecodes['UT'] = 'Unit Trust';
+			$typecodes['SUR'] = 'Excess Reject';
+
+			return isset($typecodes[$typecode]) ? $typecodes[$typecode] : $typecode;
+		}
+
 		/**
 		 * Update the transactions on the given account object.
 		 *
@@ -263,22 +372,35 @@
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
 			$page = $this->getPage('https://secure.halifax-online.co.uk' . $this->accountLinks[$accountKey]);
 			if (!$this->isLoggedIn($page)) { return false; }
+			$is2015 = $this->is2015style($page);
 			$page = $this->getDocument($page);
 
-			$available = strip_tags($this->cleanElement($page->find('span.manageMyAccountsFaShowMeAnchor')->parent()));
-			if (preg_match('@Money[\s]available:[^0-9]*([0-9]+.[0-9]+)@', $available, $matches)) {
-				$account->setAvailable($matches[1]);
+			if ($is2015) {
+				$transactions = $this->extractTransactions2015($page);
+			} else {
+				$available = strip_tags($this->cleanElement($page->find('span.manageMyAccountsFaShowMeAnchor')->parent()));
+				if (preg_match('@Money[\s]available:[^0-9]*([0-9]+.[0-9]+)@', $available, $matches)) {
+					$account->setAvailable($matches[1]);
+				}
+				$transactions = $this->extractTransactions($page);
 			}
-			$transactions = $this->extractTransactions($page);
 
 			// Now try the historical ones.
-			if ($historical) {
+			if ($historical && !$is2015) {
 				// Keep going until we can't go any more.
 				while (true) {
-					$page = $this->browser->submitFormById('pnlgrpStatement:conS1:frmVSPUpper', array('pnlgrpStatement:conS1:frmVSPUpper:btnViewPreviousStatement' => 'null'));
+					if ($is2015) {
+						$page = $this->getPage('https://secure.halifax-online.co.uk/personal/link/lp_statement_ajax?viewstatement=previous');
+					} else {
+						$page = $this->browser->submitFormById('pnlgrpStatement:conS1:frmVSPUpper', array('pnlgrpStatement:conS1:frmVSPUpper:btnViewPreviousStatement' => 'null'));
+					}
 					$page = $this->getDocument($page);
 
-					$olderTransactions = $this->extractTransactions($page);
+					if ($is2015) {
+						$olderTransactions = $this->extractTransactions2015($page);
+					} else {
+						$olderTransactions = $this->extractTransactions($page);
+					}
 					if (count($olderTransactions) == 0) { break; }
 					$transactions = array_merge($transactions, $olderTransactions);
 				}
@@ -311,7 +433,10 @@
 						$lastDate = $transaction['date'];
 						$dayCount = 0;
 					}
-					$account->addTransaction(new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['typecode'], $transaction['description'], $transaction['amount'], $transaction['balance']));
+					$tr = new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['typecode'], $transaction['description'], $transaction['amount'], $transaction['balance']);
+					// var_dump($tr);
+					// var_dump($tr->getHash());
+					$account->addTransaction($tr);
 				}
 			}
 		}

@@ -117,10 +117,16 @@
 		// will return a duplicate. :(
 		// But hopefully that won't ever happen!
 		// If only we could get transaction times or something aswell as dates :(
-		function getHash($includeTypeCode = false) {
+		function getHash($includeTypeCode = false, $cleanDesc = true) {
+			$desc = $this->getDescription();
+			if ($cleanDesc) {
+				$desc = str_replace(' // ', ' ', $desc);
+				$desc = trim(preg_replace('@\s+@', ' ', $desc));
+			}
+
 			return sprintf('%s-%u-%u-%s-%s-%s', $this->getAccountKey(),
 			                                    $this->getTime(),
-			                                    crc32($this->getDescription()),
+			                                    crc32($desc),
 			                                    ($includeTypeCode ? $this->getTypeCode() : ($this->getAmount() < 0 ? 'OUT' : 'IN')),
 			                                    str_replace('-', 'N', sprintf('%01.2f', $this->getAmount())),
 			                                    str_replace('-', 'N', sprintf('%01.2f', $this->getBalance()))

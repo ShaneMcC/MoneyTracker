@@ -41,12 +41,7 @@
 				}
 
 				if ($t->getHash() != $r['hash']) {
-					if ($t->getHash(true) != $r['hash']) {
-						echo '<strong>Error: </strong> ', $t->getHash(), ' != ', $r['hash'], '<br>';
-					} else {
-						echo '<strong>Warning: </strong> ', $t->getHash(), ' using old hash-type - converting...<br>';
-						$this->db->transactions->where('hash',  $r['hash'])->update(array('hash' => $t->getHash()));
-					}
+					echo '<strong>Error: </strong> ', $t->getHash(), ' != ', $r['hash'], '<br>';
 				}
 
 				$t->resetTagsChanged();
