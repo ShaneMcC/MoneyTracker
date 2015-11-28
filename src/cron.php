@@ -2,6 +2,8 @@
 <?php
 	require_once(dirname(__FILE__) . '/config.php');
 	require_once(dirname(__FILE__) . '/importer.php');
+	require_once(dirname(__FILE__) . '/www/functions.php');
+	require_once(dirname(__FILE__) . '/www/classes/database.php');
 
 	$importer = new Importer($config['database'], $config['importdebug']);
 
@@ -31,6 +33,9 @@
 		return $buffer;
 	}
 
+	// =========================================================================
+	// Importer
+	// =========================================================================
 
 	foreach ($config['bank'] as $bank) {
 		// We output buffer the importer as it is hstorically echo-y.
@@ -65,5 +70,42 @@
 		}
 	}
 
-	// TODO: Check data integrity.
-?>
+	// =========================================================================
+	// Data Integrity Check
+	// =========================================================================
+	$dbmap = new database(getPDO($config['database']));
+
+	$dataErrors = array();
+	foreach ($dbmap->getAccounts() as $account) {
+		$lastBalance = null;
+		foreach ($account->getTransactions() as $transaction) {
+			$unexpectedBalance = false;
+			if ($lastBalance !== null) {
+				$newBalance = $lastBalance + $transaction->getAmount();
+				$unexpectedBalance = (money_format('%.2n', $transaction->getBalance()) != money_format('%.2n', $newBalance));
+				if ($unexpectedBalance) {
+					$dataErrors[] = $transaction->getHash() . ' has an unexpected balance. Expected: ' . money_format('%.2n', $newBalance) . ' - Got: ' . money_format('%.2n', $transaction->getBalance());
+				}
+			}
+			$lastBalance = $transaction->getBalance();
+		}
+	}
+
+	// If we have an error address, and there was an error, send a mail.
+	if (count($dataErrors) > 0 && isset($config['erroraddress']['to']) && $config['erroraddress']['to'] !== false) {
+		$subject = '[MoneyTracker Cron] Data integrity error: ' . $dataErrors . ' errors found.';
+
+		$message = array();
+		$message[] = 'There was ' . count($dataErrors) . 'errors with data integrity, please see below: ';
+		$message[] = '';
+		$message[] = '= [Integrity Output] ========================';
+		foreach ($dataErrors as $e) { $message[] = $e; }
+		$message[] = '= [/Integrity Output] =======================';
+
+		mail($config['erroraddress']['to'], $subject, implode("\n", $message), 'From: ' . $config['erroraddress']['from']);
+	}
+	foreach ($dataErrors as $e) { echo $e, "\n"; }
+
+	// =========================================================================
+	// End
+	// =========================================================================
