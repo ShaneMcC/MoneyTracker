@@ -50,6 +50,8 @@
 		public function __construct() { }
 	}
 
+	class ScraperException extends Exception { }
+
 	abstract class WebBank extends Bank {
 		protected $browser = null;
 		protected $cachedDNS = array();

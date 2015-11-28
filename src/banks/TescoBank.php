@@ -33,9 +33,6 @@
 			$this->password = $password;
 			$this->securitynumber = '.' . $securitynumber;
 
-			if (!class_exists('v8js')) {
-				die('TescoBank currently requires v8js.');
-			}
 			$this->loadPermData();
 		}
 
@@ -100,7 +97,7 @@
 			$this->browser->setFieldById('login-uid', $this->account);
 			$page = $this->browser->submitFormById('login_uid_form');
 			if (empty($page)) {
-				die('Error getting initial page.');
+				throw new ScraperException('Error getting TescoBank Login page.');
 			}
 			$document = $this->getDocument($page);
 
@@ -119,7 +116,7 @@
 			$document = $this->getDocument($page);
 
 			if ($document->find('input[name="StateDataAttrNm"]')->attr("value") == "") {
-				die('Failed first hurdle.');
+				throw new ScraperException('TescoBank failed initial data submission.');
 			}
 
 			// Fuck off some more.
@@ -145,7 +142,7 @@
 				$this->browser->setFieldById($name, $this->securitynumber[$num]);
 			}
 			if (count($needed) == 0) {
-				die('Failed second hurdle.');
+				throw new ScraperException('TescoBank failed login data submission.');
 			}
 			// Check if we need to enter a password/otp.
 			$passNeeded = $document->find('input#PASSWORD');
@@ -155,7 +152,7 @@
 				$mytime = round(microtime(true) * 1000);
 				$this->browser->setFieldById('DIFFINTIME', ($mytime - $servertime));
 				$this->browser->setFieldById('PROPOSALTIME', $mytime);
-				$this->browser->setFieldById('GENERATEDOTP', $this->generateOTP($this->permdata['otpdata'], $this->password, $mytime));
+				$this->browser->setFieldById('GENERATEDOTP', $this->generateOTP($this->permdata['otpdata'], $mytime));
 			}
 
 			$page = $this->browser->clickSubmitById('NEXTBUTTON');
@@ -185,7 +182,7 @@
 				$mytime = round(microtime(true) * 1000);
 				$this->browser->setFieldById('DIFFINTIME', ($mytime - $servertime));
 				$this->browser->setFieldById('PROPOSALTIME', $mytime);
-				$this->browser->setFieldById('GENERATEDOTP', $this->generateOTP($xml, $this->password, $mytime));
+				$this->browser->setFieldById('GENERATEDOTP', $this->generateOTP($xml, $mytime));
 
 				$page = $this->browser->clickSubmitById('NEXTBUTTON');
 			}
@@ -193,7 +190,7 @@
 			// Save the DeviceID incase it changes.
 			preg_match('#var deviceID = "(.*)"#', $page, $m);
 			if (!isset($m[1])) {
-				die('Login failed.');
+				throw new ScraperException('TescoBank login failed.');
 			}
 			$deviceID = $m[1];
 
@@ -207,7 +204,10 @@
 			return $this->isLoggedIn($page);
 		}
 
-		protected function generateOTP($xml, $pass, $time) {
+		protected function generateOTP($xml, $time) {
+			if (!class_exists('v8js')) { throw new Exception('TescoBank currently requires v8js.'); }
+			$pass = $this->password;
+
 			$jsfile = file_get_contents(dirname(__FILE__) . '/TescoBank-OTP.js');
 
 			$v8 = new V8JS();

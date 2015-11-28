@@ -9,7 +9,7 @@
 	echo 'Current Database Version: ', $currentVersion, "\n";
 	echo 'Wanted Database Version: ', CURRENT_DB_VERSION, "\n";
 
-	if ($currentVersion == CURRENT_DB_VERSION) { die(); }
+	if ($currentVersion == CURRENT_DB_VERSION) { die('Nothing to do.'); }
 	echo "\n";
 
 	try {

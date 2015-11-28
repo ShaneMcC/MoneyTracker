@@ -26,8 +26,14 @@
 		}
 
 		public function import($bank) {
-			$accounts = $bank->getAccounts(true);
-			if (!is_array($accounts)) { return; }
+			try {
+				$accounts = $bank->getAccounts(true);
+			} catch (Exception $e) {
+				echo 'Error in ', $bank->__toString(), ': ', $e->getMessage(), "\n\n";
+				echo $e->getTraceAsString(), "\n";
+				return false;
+			}
+			if (!is_array($accounts)) { return false; } // No accounts.
 
 			foreach ($accounts as $a) {
 				$r = $this->db->accounts->select('accountkey')->where('accountkey', $a->getAccountKey());
@@ -46,60 +52,34 @@
 					$bank->updateTransactions($a, false, false);
 				}
 
-				// The first set of transactions we import are current.
-				// After this, we will start finding historical ones, which probably
-				// overlap.
-				$isHistoricalOverlap = false;
-				$hasHistoricalOverlap = false;
-				$lastDate = time();
 				$a->sortTransactions(false);
 				foreach ($a->getTransactions() as $t) {
 					echo '.';
 					$transData = $t->toArray();
 					// var_dump($transData);
 
-					// Is the date of the current transaction above the date of the last
-					// one we processed, and is this the first time it has happened?
-					// If so, we have moved into the historical overlap.
-					if (!$hasHistoricalOverlap && $transData['time'] > $lastDate) {
-						$isHistoricalOverlap = true;
-						$hasHistoricalOverlap = true;
-					} else if ($isHistoricalOverlap && $transData['time'] < $lastDate) {
-						// Have we got back to a lesser date?
-						$isHistoricalOverlap = false;
-					} else {
-						// Accounting.
-						$lastDate = $transData['time'];
+					// Data for update.
+					$key = $transData['hash'];
+					unset($transData['hash']);
+					$updateData = $transData;
+
+					$genericType = ($transData['typecode'][0] == '*');
+					if ($genericType) {
+						$transData['typecode'] = ltrim($transData['typecode'], '*');
+						unset($updateData['typecode']);
+						unset($updateData['type']);
 					}
 
-					// I forget the purpose of the "Historical Overlap" stuff...
-					// if (!$isHistoricalOverlap) {
-						// $result = $this->db->transactions->insert($transData);
-						// Data for update.
-						$key = $transData['hash'];
-						unset($transData['hash']);
-						$updateData = $transData;
-
-						$genericType = ($transData['typecode'][0] == '*');
-						if ($genericType) {
-							$transData['typecode'] = ltrim($transData['typecode'], '*');
-							unset($updateData['typecode']);
-							unset($updateData['type']);
-						}
-
-						if ($this->debug) {
-							$result = false;
-						} else {
-							$result = $this->db->transactions->insert_update(array('hash' => $key), $transData, $updateData);
-						}
+					if ($this->debug) {
+						echo '[DEBUG MODE] Transaction found: ', $transData['description'], ' [', $transData['typecode'], '] => ', $transData['amount'], ' (', date("Y-m-d H:i:s", $transData['time']),')', "\n";
+					} else {
+						$result = $this->db->transactions->insert_update(array('hash' => $key), $transData, $updateData);
 						if ($result == false) {
 							echo 'Failed to update: ', $transData['description'], ' [', $transData['typecode'], '] => ', $transData['amount'], ' (', date("Y-m-d H:i:s", $transData['time']),')', "\n";
 						} else {
 							echo 'Inserted/Updated: ', $transData['description'], ' [', $transData['typecode'], '] => ', $transData['amount'], ' (', date("Y-m-d H:i:s", $transData['time']),')', "\n";
 						}
-					// }
-
-					$first = false;
+					}
 				}
 			}
 
@@ -110,16 +90,18 @@
 				unset($accData['accountkey']);
 
 				if ($this->debug) {
-					$result = false;
+					echo '[DEBUG MODE] Found Account: ', $key, "\n";
 				} else {
 					$result = $this->db->accounts->insert_update(array('accountkey' => $key), $accData, $accData);
-				}
-				if ($result == false) {
-					echo 'Failed to update account data for: ', $key, "\n";
-				} else {
-					echo 'Inserted/Updated account data for: ', $key, "\n";
+					if ($result == false) {
+						echo 'Failed to update account data for: ', $key, "\n";
+					} else {
+						echo 'Inserted/Updated account data for: ', $key, "\n";
+					}
 				}
 			}
+
+			return true;
 		}
 	}
 

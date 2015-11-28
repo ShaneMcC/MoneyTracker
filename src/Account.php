@@ -1,6 +1,8 @@
 <?php
 	require_once(dirname(__FILE__) . '/Transaction.php');
 
+	class BadAccountException extends Exception { }
+
 	class Account {
 		private $myOwner = null;
 		private $myType = null;
@@ -67,7 +69,7 @@
 				if ($result[$k] === null) { unset($result[$k]); }
 			}
 
-			if (!isset($result['accountnumber']) || !isset($result['source'])) { die('Bad Account'); }
+			if (!isset($result['accountnumber']) || !isset($result['source'])) { throw new BadAccountException('No AccountNumber or Source found.'); }
 
 			return $result;
 		}

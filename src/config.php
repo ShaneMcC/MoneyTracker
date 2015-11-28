@@ -22,6 +22,12 @@
 	// Debug mode on importer?
 	$config['importdebug'] = false;
 
+	// Email address to send cron errors to, or false not to send any mail.
+	$config['erroraddress']['to'] = false;
+
+	// Email address to send cron errors from.
+	$config['erroraddress']['from'] = 'MoneyTracker Cron <MoneyTracker@' . getHostname() . '>';
+
 	// Templates directory.
 	$config['web']['templates'] = 'templates';
 	// Template theme.

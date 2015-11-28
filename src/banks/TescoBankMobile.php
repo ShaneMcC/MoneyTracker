@@ -91,7 +91,7 @@
 			$time = ($m[1] * 1000);
 
 			// Now do the password.
-			$otp = $this->generateOTP($xml, $this->password, $time);
+			$otp = $this->generateOTP($xml, $time);
 
 			$data = array('otp' => $otp, 'deviceId' => $deviceID);
 			$page = $this->browser->post('https://mob.tescobank.com/broker/api/login/authenticate/' . urlencode($this->myID), $data);
@@ -259,7 +259,8 @@
 			$transactions = @json_decode($this->browser->post('https://mob.tescobank.com/broker/api/products/' . $this->myID . '/transactions/page/1' , array('product' => $this->accountLinks[$accountKey])));
 			var_dump($transactions);
 
-			die('Incomplete.');
+			throw new Exception('TescoBankMobile unable to parse Transactions.');
+			// Incomplete, as tesco bank mobile returns bad dates.
 
 			// Get some old shit.
 			$dates = $page->find('select[name="cycleDate"] option');

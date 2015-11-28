@@ -158,7 +158,7 @@
 			if (preg_match('@([0-9]+.[0-9]+)$@', $bal[0], $matches)) {
 				return $negative ? 0 - $matches[1] : $matches[1];
 			} else {
-				die('INVALID BALANCE: "'.$original.'"' . "\n");
+				throw new ScraperException('HSBC Error parsing Balance: "'.$original.'"' . "\n");
 			}
 		}
 
@@ -694,14 +694,14 @@
 									//
 									// So try to work around this bug first before aborting.
 									if (!$firstBalance || $transaction['balance'] != $thisDay || $thisForward != $lastForward) {
-										echo 'ERROR WITH CALCULATED BALANCES:', "\n";
+										/* echo 'ERROR WITH CALCULATED BALANCES:', "\n";
 										echo '    Expected: ', $transaction['balance'], "\n";
 										echo '    Calculated: ', ($lastBalance + $transaction['amount']), "\n";
 										echo '    lastBalance: ', $lastBalance, "\n";
 										echo "\n";
 										var_dump($transaction);
-										echo "\n";
-										die();
+										echo "\n"; */
+										throw new ScraperException("HSBC Unable to calculate accurate balance. (Expected: " . $transaction['balance'] . " - Calculated: " . ($lastBalance + $transaction['amount']) . ")");
 									}
 								}
 								$lastBalance = $lastGivenBalance = $given;

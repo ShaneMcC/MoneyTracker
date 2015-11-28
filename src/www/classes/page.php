@@ -212,7 +212,7 @@
 			$loc = $this->getWebLocation() . '/' . $location;
 			$loc = preg_replace('#/+#', '/', $loc);
 			header('Location: ' . $loc);
-			die();
+			die('Redirect: <a href='.$loc.'>'.$loc.'</a>');
 		}
 
 		/**
