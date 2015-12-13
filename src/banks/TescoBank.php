@@ -188,7 +188,7 @@
 			}
 
 			// Save the DeviceID incase it changes.
-			preg_match('#var deviceID = "(.*)"#', $page, $m);
+			preg_match('#var deviceID = ["\'](.*)["\']#', $page, $m);
 			if (!isset($m[1])) {
 				throw new ScraperException('TescoBank login failed.');
 			}
