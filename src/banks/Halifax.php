@@ -103,8 +103,11 @@
 		private function parseBalance($balance) {
 			$negative = strpos($balance, '-') !== FALSE;
 			$balance = str_replace(',', '', $balance);
-			preg_match('@([0-9]+.[0-9]+)$@', $balance, $matches);
-			return $negative ? 0 - $matches[1] : $matches[1];
+			if (preg_match('@([0-9]+.[0-9]+)$@', $balance, $matches)) {
+				return $negative ? 0 - $matches[1] : $matches[1];
+			} else {
+				return '';
+			}
 		}
 
 		/**
@@ -231,7 +234,6 @@
 			// Get a better date
 			$transaction['date'] = strtotime($transaction['date'] . ' Europe/London');
 
-
 			// Rather than separate in/out, lets just have a +/- amount
 			if (!empty($transaction['out'])) {
 				$transaction['amount'] = 0 - $transaction['out'];
@@ -272,9 +274,9 @@
 				$transaction['typecode'] = $this->cleanElement($columns->eq(1)->find('abbr'));
 				$transaction['type'] = $columns->eq(1)->find('abbr')->attr('title');
 
-				$transaction['in'] = str_replace(',', '', $this->cleanElement($columns->eq(2)));
-				$transaction['out'] = str_replace(',', '', $this->cleanElement($columns->eq(3)));
-				$transaction['balance'] = str_replace(',', '', $this->cleanElement($columns->eq(4)));
+				$transaction['in'] = $this->parseBalance($this->cleanElement($columns->eq(2)));
+				$transaction['out'] = $this->parseBalance($this->cleanElement($columns->eq(3)));
+				$transaction['balance'] = $this->parseBalance($this->cleanElement($columns->eq(4)));
 				$transaction = $this->cleanTransaction($transaction);
 
 				$transactions[] = $transaction;
@@ -299,9 +301,9 @@
 				$transaction['typecode'] = $this->cleanElement($columns->eq(2));
 				$transaction['type'] = $this->getType($transaction['typecode']);
 
-				$transaction['in'] = str_replace(',', '', $this->cleanElement($columns->eq(3)));
-				$transaction['out'] = str_replace(',', '', $this->cleanElement($columns->eq(4)));
-				$transaction['balance'] = str_replace(',', '', $this->cleanElement($columns->eq(5)));
+				$transaction['in'] = $this->parseBalance($this->cleanElement($columns->eq(3)));
+				$transaction['out'] = $this->parseBalance($this->cleanElement($columns->eq(4)));
+				$transaction['balance'] = $this->parseBalance($this->cleanElement($columns->eq(5)));
 				$transaction = $this->cleanTransaction($transaction);
 
 				$transactions[] = $transaction;
