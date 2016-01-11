@@ -93,7 +93,7 @@
 
 	// If we have an error address, and there was an error, send a mail.
 	if (count($dataErrors) > 0 && isset($config['erroraddress']['to']) && $config['erroraddress']['to'] !== false) {
-		$subject = '[MoneyTracker Cron] Data integrity error: ' . $dataErrors . ' errors found.';
+		$subject = '[MoneyTracker Cron] Data integrity error: ' . count($dataErrors) . ' errors found.';
 
 		$message = array();
 		$message[] = 'There was ' . count($dataErrors) . 'errors with data integrity, please see below: ';
