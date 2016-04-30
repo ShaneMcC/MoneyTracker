@@ -280,8 +280,9 @@ V8JS
 				}
 			}
 			$page = $this->getPage('https://www.tescobank.com/portal/auth/portal/sv/overview/SVInitialDataWindow?action=1&action=initialDataNoScript');
-
 			if (!$this->isLoggedIn($page)) { return $this->accounts; }
+
+			$page = $this->getPage('https://www.tescobank.com/banking-overview/summary');
 			$page = $this->getDocument($page);
 
 			$accounts = array();
@@ -430,7 +431,7 @@ V8JS
 		public function updateTransactions($account, $historical = false, $historicalVerbose = true, $failOnSSO = false) {
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
-			$page = $this->getPage('https://www.tescobank.com/' . $this->accountLinks[$accountKey]);
+			$page = $this->getPage('https://www.tescobank.com/banking-overview/' . $this->accountLinks[$accountKey]);
 			if (!$this->isLoggedIn($page)) { return false; }
 
 			// The CC server doesn't get along with PHP...
