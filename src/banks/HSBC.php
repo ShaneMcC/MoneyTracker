@@ -41,6 +41,34 @@
 		}
 
 		/**
+		 * Handle any form-based redirects.
+		 *
+		 * @param $page (By Ref) Page that we want to check for redirects.
+		 */
+		public function followFormRedirect(&$page) {
+			while (preg_match('#document\.tempForm\.submit#Ums', $page) || preg_match('#var autoSubmitForm = document.getElementById\("[^"]+"\);#Ums', $page)) {
+				if (preg_match('#document\.tempForm\.submit#Ums', $page)) {
+					$page = $this->browser->submitFormByName('tempForm');
+				}
+				if (preg_match('#var autoSubmitForm = document.getElementById\("([^"]+)"\);#Ums', $page, $m)) {
+					$page = $this->browser->submitFormByName($m[1]);
+				}
+			}
+		}
+
+		/**
+		 * Get the requested page, following any post-get redirects.
+		 *
+		 * @param $url URL of page to get.
+		 * @param $justGet (Default: false) Just get the page, don't try to auth.
+		 */
+		protected function getPage($url, $justGet = false) {
+			$page = parent::getPage($url, $justGet);
+			$this->followFormRedirect($page);
+			return $page;
+		}
+
+		/**
 		 * Force a fresh login.
 		 *
 		 * @return true if login was successful, else false.
@@ -49,6 +77,8 @@
 			if (!$fresh) {
 				$this->newBrowser(true);
 				$page = $this->browser->get('https://' . $this->saasDomain . '/1/3/personal/online-banking?BlitzToken=blitz');
+				$this->followFormRedirect($page);
+
 				if ($this->isLoggedIn($page)) {
 					return true;
 				}
@@ -57,22 +87,22 @@
 			}
 
 			$page = $this->browser->get('https://www.hsbc.co.uk/');
+			$this->followFormRedirect($page);
 			$page = $this->getDocument($page);
 
 			// Move to login page
 			$element = $page->find('a[title="Log on to Personal Internet Banking"');
 			$loginurl = $element->eq(0)->attr('href');
-			$page = $this->browser->get('https://www.hsbc.co.uk/' . $loginurl);
+			$page = $this->browser->get('https://www.hsbc.co.uk' . $loginurl);
+			$this->followFormRedirect($page);
 
 			// Fill out the form and submit it.
-			$this->browser->setFieldById('intbankingID', $this->account);
+			$this->browser->setFieldById('Username1', $this->account);
 			// $this->browser->setMaximumRedirects(1);
-			$page = $this->browser->submitFormById('logonForm');
-			// Submit a couple of SaaS forms.
+			$page = $this->browser->submitFormById('ibLogonForm');
 
-			while (preg_match('#document\.tempForm\.submit#Ums', $page)) {
-				$page = $this->browser->submitFormByName('tempForm');
-			}
+			// Submit a couple of SaaS forms.
+			$this->followFormRedirect($page);
 
 			$securityDomain = parse_url($this->browser->getUrl());
 			$this->securityDomain = $securityDomain['host'];
@@ -93,7 +123,6 @@
 				if (!preg_match('#chalNums: \[([0-9], [0-9], [0-9])\]#Ums', $page, $matches)) {
 					return false;
 				}
-
 				$wanted = explode(',', $matches[1]);
 				$digits = array();
 				foreach ($wanted as $d) {
