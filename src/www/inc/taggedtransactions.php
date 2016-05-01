@@ -19,9 +19,14 @@
 		public function displayPage() {
 			$db = $this->tf()->getVar('db', null);
 
+			$params = $this->getQuery();
+			$this->tf()->setVar('hideEmpty', true);
+			$periodInput = isset($params['period']) ? $params['period'] : 'last14days';
+			list($period, $start, $end) = getPeriod($periodInput);
+
 			$p = $this->getParams();
 			$tag = $p['sub'];
-			$accounts = $db->getAccounts();
+			$accounts = $db->getAccounts(true, $start);
 			foreach ($accounts as $acct) {
 				$old = $acct->getTransactions();
 				$acct->clearTransactions();
@@ -46,10 +51,7 @@
 				$jsontags[$t['category']][$t['tag']] = $t['tagid'];
 			}
 
-			$params = $this->getQuery();
-			$this->tf()->setVar('hideEmpty', true);
-			$periodInput = isset($params['period']) ? $params['period'] : 'last14days';
-			list($period, $start, $end) = getPeriod($periodInput);
+
 			$this->tf()->setVar('start', $start);
 			$this->tf()->setVar('end', $end);
 			$this->tf()->setVar('period', $period);

@@ -8,32 +8,32 @@
 			$this->pdo = $pdo;
 		}
 
-		public function getAccounts($includeTransactions = true) {
+		public function getAccounts($includeTransactions = true, $oldestTransaction = 0) {
 			$accounts = array();
 			foreach ($this->db->accounts as $row) {
 				$r = iterator_to_array($row);
 				$acct = Account::fromArray($r);
 				if ($includeTransactions) {
-					$acct->setTransactions($this->getTransactions($acct->getAccountKey()));
+					$acct->setTransactions($this->getTransactions($acct->getAccountKey(), $oldestTransaction));
 				}
 				$accounts[] = $acct;
 			}
 			return $accounts;
 		}
 
-		public function getAccount($key) {
+		public function getAccount($key, $oldestTransaction = 0) {
 			foreach ($this->db->accounts->where('accountkey', $key) as $row) {
 				$r = iterator_to_array($row);
 				$acct = Account::fromArray($r);
-				$acct->setTransactions($this->getTransactions($acct->getAccountKey()));
+				$acct->setTransactions($this->getTransactions($acct->getAccountKey(), $oldestTransaction));
 				return $acct;
 			}
 			return FALSE;
 		}
 
-		public function getTransactions($accountKey) {
+		public function getTransactions($accountKey, $oldestTransaction = 0) {
 			$transactions = array();
-			foreach ($this->db->transactions->where('accountkey',  $accountKey)->order("`time` asc") as $row) {
+			foreach ($this->db->transactions->where('accountkey',  $accountKey)->and('`time` >= ?', $oldestTransaction)->order("`time` asc") as $row) {
 				$r = iterator_to_array($row);
 				$t = Transaction::fromArray($r);
 				foreach ($this->db->taggedtransaction->where('transaction',  $t->getHash()) as $tag) {

@@ -24,14 +24,19 @@
 		public function displayPage() {
 			$db = $this->tf()->getVar('db', null);
 
+			$params = $this->getQuery();
+			$this->tf()->setVar('hideEmpty', isset($params['period']));
+			$periodInput = isset($params['period']) ? $params['period'] : 'last14days';
+			list($period, $start, $end) = getPeriod($periodInput);
+
 			$p = $this->getParams();
 			$singleAccount = false;
 			if (isset($p['sub']) && !empty($p['sub'])) {
 				$singleAccount = true;
-				$accounts = array($db->getAccount($p['sub']));
+				$accounts = array($db->getAccount($p['sub'], $start));
 				$this->tf()->setVar('wantedAccount', $p['sub']);
 			} else {
-				$accounts = $db->getAccounts();
+				$accounts = $db->getAccounts(true, $start);
 				$this->tf()->setVar('wantedAccount', '');
 			}
 
@@ -42,10 +47,6 @@
 				$jsontags[$t['category']][$t['tag']] = $t['tagid'];
 			}
 
-			$params = $this->getQuery();
-			$this->tf()->setVar('hideEmpty', isset($params['period']));
-			$periodInput = isset($params['period']) ? $params['period'] : 'last14days';
-			list($period, $start, $end) = getPeriod($periodInput);
 			$this->tf()->setVar('start', $start);
 			$this->tf()->setVar('end', $end);
 			$this->tf()->setVar('period', $period);
