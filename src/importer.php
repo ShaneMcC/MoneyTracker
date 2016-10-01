@@ -18,11 +18,13 @@
 		private $db = null;
 		private $pdo = null;
 		private $debug = false;
+		private $forceHistorical = false;
 
-		public function __construct($dbdata, $debug = false) {
+		public function __construct($dbdata, $debug = false, $forceHistorical = false) {
 			$this->pdo = getPDO($dbdata);
 			$this->db = new NotORM($this->pdo);
 			$this->debug = $debug;
+			$this->forceHistorical = $forceHistorical;
 		}
 
 		public function import($bank) {
@@ -40,11 +42,15 @@
 				$row = $r->fetch();
 				$key = $row['accountkey'];
 				$accData = $a->toArray();
+				$getHistorical = $this->forceHistorical;
 
 				if ($key == NULL) {
 					$key = $accData['accountkey'];
 					$result = $this->db->accounts->insert($accData);
+					$getHistorical = true;
+				}
 
+				if ($getHistorical) {
 					echo 'ALL transactions', "\n";
 					$bank->updateTransactions($a, true, true);
 				} else {

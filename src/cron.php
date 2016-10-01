@@ -5,7 +5,7 @@
 	require_once(dirname(__FILE__) . '/www/functions.php');
 	require_once(dirname(__FILE__) . '/www/classes/database.php');
 
-	$importer = new Importer($config['database'], $config['importdebug']);
+	$importer = new Importer($config['database'], $config['importdebug'], $config['forceHistorical']);
 
 	/**
 	 * Handler for object buffering.
