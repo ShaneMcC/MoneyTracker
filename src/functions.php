@@ -20,7 +20,7 @@
 
 		$pdo = new PDO($type . ':host=' . $server . ';port=' . $port . ';dbname=' . $db, $user, $pass);
 
-		$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
+		// $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
 
 		if ($checkVersion && getDBVersion($pdo) != CURRENT_DB_VERSION) {
 			throw new Exception('Database version is not compatible, please run upgrade.php');
