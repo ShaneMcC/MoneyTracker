@@ -1,5 +1,5 @@
 <?php
-	define('CURRENT_DB_VERSION', 3);
+	define('CURRENT_DB_VERSION', 4);
 
 	/**
 	 * Get a PDO instance using the given db data.
@@ -19,6 +19,9 @@
 		$pass = isset($dbdata['pass']) ? $dbdata['pass'] : 'bankinfo';
 
 		$pdo = new PDO($type . ':host=' . $server . ';port=' . $port . ';dbname=' . $db, $user, $pass);
+
+		$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
+
 		if ($checkVersion && getDBVersion($pdo) != CURRENT_DB_VERSION) {
 			throw new Exception('Database version is not compatible, please run upgrade.php');
 		} else {

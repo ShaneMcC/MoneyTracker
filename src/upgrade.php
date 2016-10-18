@@ -9,7 +9,7 @@
 	echo 'Current Database Version: ', $currentVersion, "\n";
 	echo 'Wanted Database Version: ', CURRENT_DB_VERSION, "\n";
 
-	if ($currentVersion == CURRENT_DB_VERSION) { die('Nothing to do.'); }
+	if ($currentVersion == CURRENT_DB_VERSION) { die('Nothing to do.', "\n"); }
 	echo "\n";
 
 	try {
@@ -76,6 +76,18 @@
 			}
 
 			$orm->meta->update(array('metakey' => 'DBVersion', 'metavalue' => '3'));
+		}
+
+		// ==================================================
+		// Version upgrade -- 2016-10-28 -- Version: 4
+		// ====================
+		// Allow null descriptions.
+		// ==================================================
+		if ($currentVersion < 4) {
+			echo 'Upgrading to version: 4', "\n";
+
+			$res = $pdo->exec('ALTER TABLE accounts MODIFY description VARCHAR(128);');
+			$orm->meta->update(array('metakey' => 'DBVersion', 'metavalue' => '4'));
 		}
 
 		// Commit the upgrade.
