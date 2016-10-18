@@ -765,6 +765,11 @@
 								}
 							}
 						}
+
+						if ($nextLink == '') {
+							// No other pages of statements, abort.
+							break;
+						}
 					}
 
 					// Also look for a previous link.
