@@ -142,15 +142,44 @@
 			}
 
 			$page = $this->browser->get($url);
+			$this->handleRedirects($page);
 			if (!$justGet && !$this->isLoggedIn($page)) {
 				if (!$this->login()) { return false; }
 				$page = $this->browser->get($url);
+				$this->handleRedirects($page);
 			}
 			return $page;
 		}
 
 		abstract function login($fresh = false);
 		abstract function isLoggedIn($page);
+
+		/**
+		 * Check the page to see if any redirects are required and handle them
+		 * if they are.
+		 *
+		 * Used to emulate javascript redirects and the like. This function
+		 * should loop internally until all redirects have been followed.
+		 *
+		 * @param &$page Page data. This should be updated after the redirects.
+		 */
+		public function handleRedirects(&$page) { }
+
+		/**
+		 * Debugging function to output data from the most recent request.
+		 */
+		public function dumpRequestData() {
+			echo '==[REQUEST]===========================',"\n";
+			print_r($this->browser->getRequest());
+			echo "\n";
+			echo '==[HEADERS]===========================',"\n";
+			print_r($this->browser->getHeaders());
+			echo "\n";
+			echo '==[RESPONSE]===========================',"\n";
+			print_r($this->browser->getContent());
+			echo "\n";
+			echo '=======================================',"\n";
+		}
 
 		/**
 		 * Get a nice tidied and phpQueryed version of a html page.
