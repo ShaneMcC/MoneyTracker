@@ -51,11 +51,12 @@
 		protected function newBrowser($loadCookies = true) {
 			parent::newBrowser($loadCookies);
 
-			$this->browser->setUserAgent('com.htsu.hsbcpersonalbanking/1.5.8.0 (Linux; U; Android 4.4.4; en; hammerhead) Apache-HttpClient/UNAVAILABLE (java 1.4)');
-			$this->browser->addHeader('native-app: htsu-rbwm-v1.5.8.0');
-			$this->browser->addHeader('device-type: Android 4.4.4');
+			$this->browser->setUserAgent('com.htsu.hsbcpersonalbanking/1.5.12.0 (Linux; U; Android 6.0; en; hammerhead) Apache-HttpClient/UNAVAILABLE (java 1.4)');
+			$this->browser->addHeader('native-app: htsu-rbwm-v1.5.12.0');
+			$this->browser->addHeader('device-type: Android 6.0');
 			$this->browser->addHeader('device-status: {"rooted":"false"}');
 			$this->browser->addHeader('device-id: Android_Nexus 5_' . $this->deviceId);
+			$this->browser->addHeader('device-model: LGE Nexus 5');
 		}
 
 		/**
@@ -94,9 +95,13 @@
 		 */
 		public function login($fresh = false) {
 			$this->newBrowser(false);
-			$config = $this->browser->get('https://' . $this->saasDomain . '/content_static/mobile/1/5/8/0/config.json?' . time());
+			$config = $this->browser->get('https://' . $this->saasDomain . '/content_static/mobile/1/5/12/0/config.json?' . time());
 
 			$domainData = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.SaaSSecurityCommand&CHANNEL=MOBILE&SaaS_FUNCTION_NAME=DetermineSiteID&nextPage=MOBILE_RETRIEVE_DOMAIN_URL&locale=en', array(), false);
+
+			var_dump($domainData);
+			die();
+
 			$this->securityDomain = $domainData->body->domainName;
 
 			$tokens = $this->hsbcPost('https://' . $this->saasDomain . '/1/2/?idv_cmd=idv.GetCommToken&nextPage=hsbc.pib.view-accounts&CHANNEL=MOBILE&function=Saas_Authentication', array('country' => 'UK', 'region' => 'HBEU', 'targetCam' => '30'), false);
@@ -117,6 +122,8 @@
 				               );
 			$initialLogin = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.Authentication&nextPage=MOBILE_CAM10_AUTHENTICATION&CHANNEL=MOBILE', $loginData, false);
 
+var_dump($initialLogin);
+
 			if ($initialLogin == null) { return FALSE; }
 
 			$wanted = explode(',', $initialLogin->body->rccDigits);
@@ -135,9 +142,15 @@
 			              'memorableAnswer' => $this->password,
 			              'password' => implode('', $digits),
 			              '__locale' => 'en',
+			              'OAUTH_APP' => 'null',
+			              'OAUTH_DEVICE_ID' => 'null',
 			              );
 
+var_dump($data);
+
 			$decoded = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.Authentication&nextPage=MOBILE_CAM30_AUTHENTICATION&CHANNEL=MOBILE&__flag_logon_timeout=Y&devicestatus=true', $data, false);
+
+var_dump($decoded);
 
 			if ($decoded->body->lastLogonDate !== NULL) {
 				$interimTokens = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/SaaSMobileLogoutCAM0Resource/?CHANNEL=MOBILE', array(), false);
@@ -149,8 +162,14 @@
 				$cmdIn = $this->hsbcPost('https://' . $this->saasDomain . '/1/3/mobile-1-5/entitlement-enquiry?ver=1.1&json=true', array('cmd_in' => 'cmd_in'), false);
 				$menuRefresh = $this->hsbcPost('https://' . $this->saasDomain . '/1/3/mobile-1-5/scm?ver=1.1&json=true', array('__cmd-All_MenuRefresh' => '__cmd-All_MenuRefresh'), false);
 
+var_dump('TRUE');
+die();
+
 				return true;
 			}
+
+var_dump('FALSE');
+die();
 
 			return false;
 		}
