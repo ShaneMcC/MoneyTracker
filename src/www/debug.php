@@ -19,7 +19,7 @@
 	echo '</pre>';
 
 	foreach ($accounts as $account) {
-		echo '<h1>', $account->getFullNumber(), '</h1>';
+		echo '<h1>', $account->getFullNumber(), '<small><br>', $account->getDescriptionOrType(). '</small></h1>';
 
 		echo '<table>';
 		echo '<tr>';
