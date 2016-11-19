@@ -16,8 +16,44 @@
 
 		private $securityDomain = 'www.security.hsbc.co.uk';
 		private $saasDomain = 'www.saas.hsbc.co.uk';
+		private $servicesDomain = 'www.services.online-banking.hsbc.co.uk';
+		protected $accountData = array();
 
 		private $accounts = null;
+
+
+		const VER_UNKNOWN = 0;
+		const VER_PRE_NOV2016 = 1;
+		const VER_NOV2016 = 2;
+
+		private $webVersion = HSBC::VER_UNKNOWN;
+		private $appSettings = null;
+
+		private function initAppSettings() {
+			$this->appSettings = array();
+			$this->appSettings[HSBC::VER_NOV2016] = ['appVer' => 'UK656',
+			                                        'member' => 'hbeu',
+			                                        'country' => 'gb',
+			                                        'lang' => 'en_GB',
+			                                        'contextPath' => '/gpib',
+			                                       ];
+		}
+
+		private function getAppSetting($setting) {
+			if (isset($this->appSettings[$this->webVersion][$setting])) {
+				return $this->appSettings[$this->webVersion][$setting];
+			} else {
+				return '';
+			}
+		}
+
+		private function setAppSetting($setting, $value) {
+			if (!isset($this->appSettings[$this->webVersion])) {
+				$this->appSettings[$this->webVersion] = array();
+			}
+
+			$this->appSettings[$this->webVersion][$setting] = $value;
+		}
 
 		/**
 		 * Create a HSBC.
@@ -31,6 +67,8 @@
 			$this->account = $account;
 			$this->secretword = $secretword;
 			$this->securekey = $securekey;
+
+			$this->initAppSettings();
 		}
 
 		/**
@@ -46,26 +84,50 @@
 		 * @param $page (By Ref) Page that we want to check for redirects.
 		 */
 		public function followFormRedirect(&$page) {
-			while (preg_match('#document\.tempForm\.submit#Ums', $page) || preg_match('#var autoSubmitForm = document.getElementById\("[^"]+"\);#Ums', $page)) {
-				if (preg_match('#document\.tempForm\.submit#Ums', $page)) {
+			while (true) {
+				$oldURL = $this->browser->getUrl();
+
+				$tempForm = preg_match('#document\.tempForm\.submit#Ums', $page) || preg_match("#document\.getElementById\('tempForm'\)\.submit\(\)#Ums", $page);
+				$autoSubmitForm = preg_match('#var autoSubmitForm = document.getElementById\("([^"]+)"\);#Ums', $page, $m);
+				$windowLocationHref = preg_match('#window.location.href = "([^"]+)";.*<body>Please wait...</body>#Ums', $page, $m2);
+
+				if ($tempForm) {
+					$method = 'tempForm';
 					$page = $this->browser->submitFormByName('tempForm');
-				}
-				if (preg_match('#var autoSubmitForm = document.getElementById\("([^"]+)"\);#Ums', $page, $m)) {
+				} else if ($autoSubmitForm) {
+					$method = 'autoSubmitForm';
 					$page = $this->browser->submitFormByName($m[1]);
+				} else if ($windowLocationHref) {
+					$method = 'windowLocationHref';
+					$urlInfo = parse_url($this->browser->getUrl());
+
+					if ($m2[1][0] == '/') {
+						$newURL = $urlInfo['scheme'] . '://' . $urlInfo['host'] . $m2[1];
+						if (isset($urlInfo['query']) && !empty($urlInfo['query'])) {
+							$newURL .= '&';
+							$newURL .= $urlInfo['query'];
+						}
+					} else {
+						$newURL = $m2[1];
+					}
+
+					$page = $this->browser->get($newURL);
+					if (empty($page)) {
+						// Sometimes the page comes back empty... try again.
+						// echo 'REPEATED: ';
+						$page = $this->browser->get($newURL);
+					}
+
+				} else {
+					break;
 				}
+
+				// echo $oldURL, ' -[', $method, ']-> ', $this->browser->getUrl(), "\n";
 			}
 		}
 
-		/**
-		 * Get the requested page, following any post-get redirects.
-		 *
-		 * @param $url URL of page to get.
-		 * @param $justGet (Default: false) Just get the page, don't try to auth.
-		 */
-		protected function getPage($url, $justGet = false) {
-			$page = parent::getPage($url, $justGet);
+		public function handleRedirects(&$page) {
 			$this->followFormRedirect($page);
-			return $page;
 		}
 
 		/**
@@ -85,17 +147,17 @@
 			} else {
 				$this->newBrowser(false);
 			}
-
+			// echo "Pre-Home", "\n";
 			$page = $this->browser->get('https://www.hsbc.co.uk/');
 			$this->followFormRedirect($page);
 			$page = $this->getDocument($page);
-
+			// echo "Home", "\n";
 			// Move to login page
 			$element = $page->find('a[title="Log on to Personal Internet Banking"');
 			$loginurl = $element->eq(0)->attr('href');
 			$page = $this->browser->get('https://www.hsbc.co.uk' . $loginurl);
 			$this->followFormRedirect($page);
-
+			// echo "Login", "\n";
 			// Fill out the form and submit it.
 			$this->browser->setFieldById('Username1', $this->account);
 			// $this->browser->setMaximumRedirects(1);
@@ -103,7 +165,7 @@
 
 			// Submit a couple of SaaS forms.
 			$this->followFormRedirect($page);
-
+			// echo "SecureKey Bit", "\n";
 			$securityDomain = parse_url($this->browser->getUrl());
 			$this->securityDomain = $securityDomain['host'];
 
@@ -135,22 +197,53 @@
 				$this->browser->setFieldById('memorableAnswer', $this->secretword);
 				$this->browser->setFieldById('password', implode('', $digits));
 			}
-
+			// echo "Post-Login", "\n";
 			$page = $this->browser->clickSubmit('Continue');
 			while (preg_match('#document\.tempForm\.submit#Ums', $page)) {
 				$page = $this->browser->submitFormByName('tempForm');
 			}
+
 			$bankDomain = parse_url($this->browser->getUrl());
 			$this->saasDomain = $bankDomain['host'];
-			$page = $this->browser->get('https://' . $this->saasDomain . '/1/3/HSBCINTEGRATION/welcome?BlitzToken=blitz');
+			$this->servicesDomain = $bankDomain['host'];
+
+			$testPage = $this->getDocument($page);
+			if ($testPage->find('#_loaderForeground')) {
+				// New Style
+				$this->webVersion = HSBC::VER_NOV2016;
+				$page = $this->browser->get('https://' . $this->saasDomain . $this->getAppSetting('contextPath'));
+				$this->followFormRedirect($page);
+			} else {
+				// Old Style
+				$this->webVersion = HSBC::VER_PRE_NOV2016;
+				$page = $this->browser->get('https://' . $this->saasDomain . '/1/3/HSBCINTEGRATION/welcome?BlitzToken=blitz');
+			}
 
 			// And done.
 			$this->saveCookies();
+
+			// echo "Done?", ($this->isLoggedIn($page) ? 'LOGIN OK' : 'LOGIN FAIL'), "\n";
 			return $this->isLoggedIn($page);
 		}
 
 		public function isLoggedIn($page) {
-			return (strpos($page, 'View My accounts') !== FALSE);
+			// The horrible javascripty page for the NOV2016 version doesn't
+			// actually have any nice text to confirm the login.
+			//
+			// For now, let's assume that if we can see the customer_id div
+			// that, we're logged in...
+			$viewMyAccounts = (strpos($page, 'View My accounts') !== FALSE);
+			$customerId = (strpos($page, '<div id="customer_id" ') !== FALSE);
+
+			// Guess the version if needed.
+			if ($this->webVersion == HSBC::VER_UNKNOWN) {
+				if ($customerId) {
+					$this->webVersion = HSBC::VER_NOV2016;
+				} else if ($viewMyAccounts) {
+					$this->webVersion = HSBC::VER_PRE_NOV2016;
+				}
+			}
+			return ($viewMyAccounts || $customerId);
 		}
 
 		/**
@@ -227,9 +320,121 @@
 
 			$this->accounts = array();
 
-			$page = $this->getPage('https://' . $this->saasDomain . '/1/3/personal/online-banking?BlitzToken=blitz');
+			// $page = $this->getPage('https://' . $this->saasDomain . '/1/3/personal/online-banking?BlitzToken=blitz');
+			$page = $this->getPage('https://www.hsbc.co.uk/1/3/personal/online-banking');
+			if (!$this->isLoggedIn($page)) { die('Unable to login'); return $this->accounts; }
 
-			if (!$this->isLoggedIn($page)) { return $this->accounts; }
+			if ($this->webVersion == HSBC::VER_NOV2016) {
+				$this->getAccounts_Nov2016($useCached, $transactions, $historical, $historicalVerbose);
+			} else if ($this->webVersion == HSBC::VER_PRE_NOV2016) {
+				$this->getAccounts_preNov2016($useCached, $transactions, $historical, $historicalVerbose);
+			}
+
+			return $this->accounts;
+		}
+
+
+		private function getAccounts_Nov2016($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false) {
+			$contextPath = 'https://' . $this->servicesDomain . $this->getAppSetting('contextPath');
+
+			$url = $contextPath . '/channel/proxy/accountDataSvc/rtrvAcctSumm';
+			$urlInfo = parse_url($url);
+
+			$accSummReq = ['accountSummaryFilter' => ['txnTypCdes' => [],
+			                                          'entityCdes' => [['ctryCde' => strtoupper($this->getAppSetting('country')),
+			                                                            'grpMmbr' => strtoupper($this->getAppSetting('member'))],
+			                                                          ],
+			                                         ],
+			              ];
+
+			$oldHeaders = $this->browser->getAdditionalHeaders();
+			$this->browser->addHeader("Content-type: application/json");
+			$this->browser->addHeader("X-HDR-Synchronizer-Token: " . $this->browser->getCookieValue($urlInfo['host'], $urlInfo['path'], "SYNC_TOKEN"));
+			$page = $this->browser->post($url, json_encode($accSummReq), 'application/json');
+			$this->browser->setAdditionalHeaders($oldHeaders);
+
+			$accountdetails = json_decode($page, true);
+			if ($accountdetails === null) { return $this->accounts; }
+
+			foreach ($accountdetails['countriesAccountList'][0]['acctLiteWrapper'] as $acct) {
+				// Get the values
+				$type = $this->getAccountTypeFromCode($acct['entProdTypCde']);
+				$owner = $acct['acctHldrFulName'][0];
+				$number = explode(' ', $acct['displyID']);
+				$balance = (String)$acct['ldgrBal']['amt'];
+
+				$account = new Account();
+				$account->setSource($this->__toString());
+				$account->setType($type);
+				$account->setOwner($owner);
+				if ($acct['prodCatCde'] == 'CC') {
+					$account->setSortCode('00-00-02');
+					$account->setAccountNumber(implode('', $number));
+				} else {
+					$account->setSortCode($number[0]);
+					$account->setAccountNumber($number[1]);
+				}
+				$account->setBalance($balance);
+
+				// GET DETAILED ACCOUNT INFO
+				$detailedURL = $url = $contextPath . '/channel/proxy/accountDataSvc/rtrvDDAcctDtl';
+				$arrayType = 'ddAcctDtl';
+				if ($acct['prodCatCde'] == 'CC') {
+					$detailedURL = $url = $contextPath . '/channel/proxy/accountDataSvc/rtrvCCAcctDtl';
+					$arrayType = 'ccAcctDtl';
+				}
+
+				$urlInfo = parse_url($url);
+				$this->browser->addHeader("Content-type: application/json");
+				$this->browser->addHeader("X-HDR-Synchronizer-Token: " . $this->browser->getCookieValue($urlInfo['host'], $urlInfo['path'], "SYNC_TOKEN"));
+				$rtrvDDAcctDtl = ["acctIdr" => ["acctIndex" => $acct['acctIndex'],
+				                                "entProdTypCde" => $acct['entProdTypCde'],
+				                                "entProdCatCde" => $acct['entProdCatCde'],
+				                               ],
+				                 ];
+				$detailPage = $this->browser->post($url, json_encode($rtrvDDAcctDtl), 'application/json');
+				$this->browser->setAdditionalHeaders($oldHeaders);
+				$acctDetails = json_decode($detailPage, true);
+
+				if ($acctDetails !== null && isset($acctDetails[$arrayType])) {
+					$acctD = $acctDetails[$arrayType];
+					$acct['detailed_info'] = $acctD;
+
+					if ($acct['prodCatCde'] == 'CC') {
+						if (isset($acctD['creditLimit']['amt']) && $acctD['creditLimit']['amt'] != 0) {
+							$account->setLimits('Credit Limit: '.$acctD['creditLimit']['amt']);
+						}
+						if (isset($acctD['availCreditAmt']['amt']) && $acctD['availCreditAmt']['amt'] != 0) {
+							$account->setAvailable($acctD['availCreditAmt']['amt']);
+						}
+					} else {
+						if (isset($acctD['creditLimit']['amt']) && $acctD['creditLimit']['amt'] != 0) {
+							$account->setLimits('Overdraft Limit: '.$acctD['creditLimit']['amt']);
+						}
+						if (isset($acctD['availBal']['amt']) && $acctD['availBal']['amt'] != $acctD['ldgrBal']['amt']) {
+							$account->setAvailable($acctD['availBal']['amt']);
+						}
+					}
+				} else {
+					if (isset($acct['availBal']['amt']) && $acct['availBal']['amt'] != $acct['ldgrBal']['amt']) {
+						$account->setAvailable($acct['availBal']['amt']);
+					}
+				}
+
+				$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
+				$this->accountData[$accountKey] = $acct;
+
+				if ($transactions) {
+					$this->updateTransactions($account, $historical, $historicalVerbose);
+				}
+
+
+				$this->accounts[] = $account;
+			}
+		}
+
+		private function getAccounts_preNov2016($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false) {
+			$this->accounts = array();
 
 			$page = $this->getDocument($page);
 			$accounts = array();
@@ -366,6 +571,19 @@
 			return isset($typecodes[$typecode]) ? $typecodes[$typecode] : $typecode;
 		}
 
+		private function getAccountTypeFromCode($code) {
+			$settings = $this->getAppSetting('ProductTypeDesc_displayText_nls');
+
+			if (empty($settings)) {
+				$settings = file_get_contents('https://www.content.online-banking.hsbc.co.uk/ContentService/gsp/ChannelsLibrary/Components/client/actservicing/bijit/nls/en-gb/ProductTypeDesc_displayText_nls.js');
+				$settings = json_decode(preg_replace('#^define\((.*)\);$#Ums', '$1', $settings), true);
+				$settings = $settings['productTypeCode'];
+				$this->setAppSetting('ProductTypeDesc_displayText_nls', $settings);
+			}
+
+			return isset($settings[$code]) ? $settings[$code] : $code;
+		}
+
 		/**
 		 * Update the transactions on the given account object.
 		 *
@@ -380,19 +598,162 @@
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
 
-			$card = $account->getType() == 'CREDIT CARD';
-			if ($card) {
-				$page = $this->getPage('https://' . $this->saasDomain . '/1/3/personal/online-banking/credit-card-transactions?ActiveAccountKey=' . $account->getAccountNumber() . '&accountId=' . $account->getAccountNumber() . '&productType=CCA&BlitzToken=blitz');
+			if ($this->webVersion == HSBC::VER_NOV2016) {
+				$this->updateTransactions_Nov2016($account, $historical, $historicalVerbose);
 			} else {
-				$page = $this->getPage('https://' . $this->saasDomain . '/1/3/personal/online-banking/recent-transaction?ActiveAccountKey=' . $accountKey . '&BlitzToken=blitz');
-			}
-			if (!$this->isLoggedIn($page)) { return false; }
-			$page = $this->getDocument($page);
+				$card = $account->getType() == 'CREDIT CARD';
+				if ($card) {
+					$page = $this->getPage('https://' . $this->saasDomain . '/1/3/personal/online-banking/credit-card-transactions?ActiveAccountKey=' . $account->getAccountNumber() . '&accountId=' . $account->getAccountNumber() . '&productType=CCA&BlitzToken=blitz');
+				} else {
+					$page = $this->getPage('https://' . $this->saasDomain . '/1/3/personal/online-banking/recent-transaction?ActiveAccountKey=' . $accountKey . '&BlitzToken=blitz');
+				}
+				if (!$this->isLoggedIn($page)) { return false; }
+				$page = $this->getDocument($page);
 
-			if ($card) {
-				$this->updateCardTransactions($account, $accountKey, $page, $historical, $historicalVerbose);
-			} else {
-				$this->updateStandardTransactions($account, $accountKey, $page, $historical, $historicalVerbose);
+				if ($card) {
+					$this->updateCardTransactions($account, $accountKey, $page, $historical, $historicalVerbose);
+				} else {
+					$this->updateStandardTransactions($account, $accountKey, $page, $historical, $historicalVerbose);
+				}
+			}
+		}
+
+		/**
+		 * Update transactions from a credit-card account view.
+		 *
+		 * @param $account Account Object
+		 * @param $historical (Default: false) Also try to get historical
+		 *                    transactions?
+		 * @param $historicalVerbose (Default: false) Should verbose data be
+		 *                           collected for historical, or is a single-line
+		 *                           description ok?
+		 */
+		public function updateTransactions_Nov2016($account, $historical, $historicalVerbose) {
+			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
+			if (!isset($this->accountData[$accountKey])) { return false; }
+			$acct = $this->accountData[$accountKey];
+
+			$contextPath = 'https://' . $this->servicesDomain . $this->getAppSetting('contextPath');
+
+			$url = $contextPath . '/channel/proxy/accountDataSvc/rtrvTxnSumm';
+			$urlInfo = parse_url($url);
+
+			$txnHistType = null;
+			$fromDate = date('Y-m-d', strtotime('-120 days'));
+			$toDate = date('Y-m-d');
+			if ($acct['prodCatCde'] == 'CC') {
+				$txnHistType = 'U';
+				$toDate = "";
+			}
+
+			$rtrvTxnSumm = ["retreiveTxnSummaryFilter" => ["txnDatRnge" => ["fromDate" => $fromDate, "toDate" => $toDate],
+			                                               "numOfRec" => -1,
+			                                               "txnAmtRnge" => null,
+			                                               "txnHistType" => $txnHistType],
+			                "acctIdr" => ["acctIndex" => $acct['acctIndex'],
+			                              "entProdTypCde" => $acct['entProdTypCde'],
+				                          "entProdCatCde" => $acct['entProdCatCde']],
+			                "pagingInfo" => ["startDetail" => null, "pagingDirectionCode" => "D"]
+			               ];
+
+			$oldHeaders = $this->browser->getAdditionalHeaders();
+			$this->browser->addHeader("Content-type: application/json");
+			$this->browser->addHeader("X-HDR-Synchronizer-Token: " . $this->browser->getCookieValue($urlInfo['host'], $urlInfo['path'], "SYNC_TOKEN"));
+			$page = $this->browser->post($url, json_encode($rtrvTxnSumm), 'application/json');
+			$this->browser->setAdditionalHeaders($oldHeaders);
+
+			$txns = json_decode($page, true);
+			if ($txns === null || !isset($txns['txnSumm'])) { return; }
+
+			$transactions = array();
+			$txnIndex = 0;
+			foreach ($txns['txnSumm'] as $txn) {
+				// Pull out the data
+				$transaction['date'] = $txn['txnPostDate'];
+				$transaction['datestr'] = $txn['txnPostDate'];
+				$transaction['date'] = strtotime($transaction['date'] . ' Europe/London');
+
+				$transaction['description'] = implode(' // ', $txn['txnDetail']);
+				$transaction['description'] = preg_replace('#[\n\s]+#ims', ' ', $transaction['description']);
+				$transaction['description'] = html_entity_decode($transaction['description']);
+				$transaction['description'] = preg_replace('#//[\s]+$#', '', $transaction['description']);
+				$transaction['description'] = trim($transaction['description']);
+
+				$transaction['amount'] = $txn['txnAmt']['amt'];
+				if (isset($txn['balRunAmt'])) {
+					$transaction['balance'] = $txn['balRunAmt']['amt'];
+				} else {
+					$transaction['balance'] = NULL;
+				}
+
+				if (isset($txn['txnCatCde'])) {
+					$transaction['typecode'] = $txn['txnCatCde'];
+				} else {
+					$transaction['typecode'] = ($txn['txnAmt']['amt'] < 0) ? 'DR' : 'CR';
+				}
+				$transaction['type'] = $this->getType($transaction['typecode']);
+				$transaction['txnIndex'] = $txnIndex++;
+
+				$transactions[] = $transaction;
+			}
+
+			// CCs suck and don't provide the balance after the transaction.
+			// So calculate it ourselves.
+			if ($acct['prodCatCde'] == 'CC') {
+				// First, correctly sort by date because CCs are silly.
+				usort($transactions, function($a, $b) {
+					// If the dates are the same, sort such that the lower
+					// txnIndex (newer transaction) is first.
+					if ($a['date'] == $b['date']) {
+						return $b['txnIndex'] - $a['txnIndex'];
+					} else {
+						// If the dates are not the same, sort such that the
+						// newer date is first.
+						return $b['date'] - $a['date'];
+					}
+				});
+
+				// Now, apply balances...
+				// Loop through all transactions, and calculate the balance.
+				//
+				// We know what the balance is "now" and we know how each
+				// transaction impacted it, so we can apply the balance that
+				// way.
+				$lastBalance = $acct['ldgrBal']['amt'];
+				foreach ($transactions as &$txn) {
+					$txn['balance'] = $lastBalance;
+					if ($txn['amount'] < 0) {
+						$lastBalance += abs($txn['amount']);
+					} else {
+						$lastBalance -= abs($txn['amount']);
+					}
+				}
+			}
+
+			// Now go through the transactions bottom-top so that we have them in the
+			// order that they occured.
+			$transactions = array_reverse($transactions);
+
+			// To make ordering the transactions easier, rather than having
+			// all the days transactions having the same time, we add a second
+			// each time. (so the first transaction of the day happened at
+			// 00:00:00 the second at 00:00:01 and so on.
+			$dayCount = 0;
+			$lastDate = 0;
+
+			// Ignore transactions on the most-recent current date, as there may be more to come.
+			if (count($transactions) > 0) {
+				$firstDate = $transactions[count($transactions) -1 ]['date'];
+				foreach ($transactions as $transaction) {
+					if ($lastDate == $transaction['date']) {
+						$dayCount++;
+						$transaction['date'] += $dayCount;
+					} else {
+						$lastDate = $transaction['date'];
+						$dayCount = 0;
+					}
+					$account->addTransaction(new Transaction($this->__toString(), $account->getAccountKey(), $transaction['date'], $transaction['type'], $transaction['typecode'], $transaction['description'], $transaction['amount'], $transaction['balance']));
+				}
 			}
 		}
 
