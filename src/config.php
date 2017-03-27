@@ -41,4 +41,10 @@
 	if (file_exists(dirname(__FILE__) . '/config.user.php')) {
 		require_once(dirname(__FILE__) . '/config.user.php');
 	}
-?>
+
+	if (!function_exists('onIntegrityError')) {
+		function onIntegrityError($error) { }
+	}
+	if (!function_exists('onBankError')) {
+		function onBankError($bank, $buffer, $ex) { }
+	}

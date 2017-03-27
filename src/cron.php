@@ -44,15 +44,21 @@
 		// to capture the output, and set a chunk size of 1 so that we flush
 		// immediately.
 		ob_start("obHandler", 1);
+		$ex = null;
 		try {
 			$importResult = $importer->import($bank);
 		} catch (Exception $e) {
 			$importResult = false;
 			echo 'Import error: ', $e->getMessage(), "\n\n";
 			echo $e->getTraceAsString(), "\n";
+			$e = $ex;
 		}
 		// End the output buffering and get a copy of the buffer.
 		$buffer = obGetEndAndFlush();
+
+		if ($ex != null) {
+			onBankError($bank, $buffer, $ex);
+		}
 
 		// If we have an error address, and there was an error, send a mail.
 		if (!$importResult && isset($config['erroraddress']['to']) && $config['erroraddress']['to'] !== false) {
@@ -104,7 +110,10 @@
 
 		mail($config['erroraddress']['to'], $subject, implode("\n", $message), 'From: ' . $config['erroraddress']['from']);
 	}
-	foreach ($dataErrors as $e) { echo $e, "\n"; }
+	foreach ($dataErrors as $e) {
+		echo $e, "\n";
+		onIntegrityError($e);
+	}
 
 	// =========================================================================
 	// End
