@@ -41,7 +41,7 @@ Monzo requires some configuration on the monzo developer portal to get going, as
 
 Go here: https://developers.monzo.com/api/playground
 Authorize Monzo.
-Then go to https://developers.monzo.com/apps/home and create a new Confidentail OAuth Client 
+Then go to https://developers.monzo.com/apps/home and create a new confidential OAuth Client 
 Make a note of: Client ID, Client Secret
 
 Make sure that Redirect URLs is set to the same as `$config['baseurl'] . 'monzo.php'` (eg: `http://localhost/moneytracker/monzo.php`) or the redirect won't work.
