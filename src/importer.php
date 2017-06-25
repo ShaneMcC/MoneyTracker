@@ -47,6 +47,9 @@
 				if ($key == NULL) {
 					$key = $accData['accountkey'];
 					$result = $this->db->accounts->insert($accData);
+					if ($result === FALSE) {
+						echo 'Failed to insert new account data for: ', $key, "\n";
+					}
 					$getHistorical = true;
 				}
 

@@ -47,7 +47,7 @@
 			             'description' => $this->myDescription,
 			             'amount' => $this->myAmount,
 			             'balance' => $this->myBalance,
-			             'extra' => $this->myExtra,
+			             'extra' => json_encode($this->myExtra),
 			             'source' => $this->mySource);
 		}
 
@@ -92,7 +92,7 @@
 			$obj->myDescription = $array['description'];
 			$obj->myAmount = $array['amount'];
 			$obj->myBalance = $array['balance'];
-			$obj->myExtra = $array['extra'];
+			$obj->myExtra = json_decode($array['extra'], true);
 			$obj->mySource = $array['source'];
 
 			return $obj;
@@ -124,13 +124,19 @@
 				$desc = trim(preg_replace('@\s+@', ' ', $desc));
 			}
 
-			return sprintf('%s-%u-%u-%s-%s-%s', $this->getAccountKey(),
-			                                    $this->getTime(),
-			                                    crc32($desc),
-			                                    ($includeTypeCode ? $this->getTypeCode() : ($this->getAmount() < 0 ? 'OUT' : 'IN')),
-			                                    str_replace('-', 'N', sprintf('%01.2f', $this->getAmount())),
-			                                    str_replace('-', 'N', sprintf('%01.2f', $this->getBalance()))
-			                                  );
+			$hashCode = sprintf('%s-%u', $this->getAccountKey(), $this->getTime());
+
+			if (isset($this->myExtra['hashcode'])) {
+				$hashCode .= sprintf('-%s', $this->myExtra['hashcode']);
+			} else {
+				$hashCode .= sprintf('-%u-%s-%s-%s', crc32($desc),
+				                                    ($includeTypeCode ? $this->getTypeCode() : ($this->getAmount() < 0 ? 'OUT' : 'IN')),
+				                                    str_replace('-', 'N', sprintf('%01.2f', $this->getAmount())),
+				                                    str_replace('-', 'N', sprintf('%01.2f', $this->getBalance()))
+				                                   );
+			}
+
+			return $hashCode;
 		}
 	}
 ?>

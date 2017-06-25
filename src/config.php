@@ -10,6 +10,7 @@
 	require_once(dirname(__FILE__) . '/banks/Halifax.php');
 	require_once(dirname(__FILE__) . '/banks/TescoBank.php');
 	require_once(dirname(__FILE__) . '/banks/TescoBankMobile.php');
+	require_once(dirname(__FILE__) . '/banks/Monzo.php');
 
 	// Database info
 	$config['database']['type'] = 'mysql';
@@ -18,6 +19,9 @@
 	$config['database']['db'] = 'bankinfo';
 	$config['database']['user'] = 'bankinfo';
 	$config['database']['pass'] = 'bankinfo';
+
+	// Base URL (Required by Monzo among other things.)
+	$config['baseurl'] = 'http://localhost/moneytracker/';
 
 	// Debug mode on importer?
 	$config['importdebug'] = false;

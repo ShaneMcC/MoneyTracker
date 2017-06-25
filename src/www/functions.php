@@ -99,14 +99,18 @@
 			                                         'start' => mktime(0, 0, 0, date("m")-12, 1, date("Y")),
 			                                         'end' => mktime(0, 0, 0, date("m"), 1, date("Y")),
 			                                         ),
-			                        'thisyear' => array('name' => 'This year',
+			                        'thisyear' => array('name' => 'This year ('. date("Y") . ')',
 			                                            'start' => mktime(0, 0, 0, 1, 1, date("Y")),
 			                                            'end' => time(),
 			                                            ),
-			                        'lastyear' => array('name' => 'Last year',
+			                        'lastyear' => array('name' => 'Last year (' . (date("Y") - 1) . ')',
 			                                            'start' => mktime(0, 0, 0, 1, 1, date("Y") - 1),
 			                                            'end' => mktime(0, 0, 0, 1, 1, date("Y")),
 			                                            ),
+						'2year' => array('name' => '2 years ago (' . (date("Y") - 2) . ')',
+						                    'start' => mktime(0, 0, 0, 1, 1, date("Y") - 2),
+						                    'end' => mktime(0, 0, 0, 1, 1, date("Y") - 1),
+						                    ),
 			                        );
 		}
 

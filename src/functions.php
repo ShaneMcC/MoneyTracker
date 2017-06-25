@@ -1,5 +1,5 @@
 <?php
-	define('CURRENT_DB_VERSION', 4);
+	define('CURRENT_DB_VERSION', 7);
 
 	/**
 	 * Get a PDO instance using the given db data.
@@ -20,7 +20,7 @@
 
 		$pdo = new PDO($type . ':host=' . $server . ';port=' . $port . ';dbname=' . $db, $user, $pass);
 
-		// $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
+		$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING);
 
 		if ($checkVersion && getDBVersion($pdo) != CURRENT_DB_VERSION) {
 			throw new Exception('Database version is not compatible, please run upgrade.php');
@@ -65,6 +65,18 @@
 
 	function endsWith($haystack, $needle) {
 	    return $needle === "" || substr($haystack, -strlen($needle)) === $needle;
+	}
+
+	function file_post_contents($url, $postdata, $dataType = 'application/x-www-form-urlencoded') {
+		$opts = array('http' => array('method'  => 'POST',
+		                              'header'  => 'Content-type: ' . $dataType,
+		                              'content' => $postdata,
+		                             )
+		             );
+		$context  = stream_context_create($opts);
+		$result = file_get_contents($url, false, $context);
+
+		return $result;
 	}
 
 	date_default_timezone_set(@date_default_timezone_get());

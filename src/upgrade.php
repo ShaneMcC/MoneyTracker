@@ -9,7 +9,7 @@
 	echo 'Current Database Version: ', $currentVersion, "\n";
 	echo 'Wanted Database Version: ', CURRENT_DB_VERSION, "\n";
 
-	if ($currentVersion == CURRENT_DB_VERSION) { die('Nothing to do.', "\n"); }
+	if ($currentVersion == CURRENT_DB_VERSION) { die('Nothing to do.' . "\n"); }
 	echo "\n";
 
 	try {
@@ -88,6 +88,54 @@
 
 			$res = $pdo->exec('ALTER TABLE accounts MODIFY description VARCHAR(128);');
 			$orm->meta->update(array('metakey' => 'DBVersion', 'metavalue' => '4'));
+		}
+
+		// ==================================================
+		// Version upgrade -- 2017-06-25 -- Version: 5
+		// ====================
+		// Allow longer account keys.
+		// ==================================================
+		if ($currentVersion < 5) {
+			echo 'Upgrading to version: 5', "\n";
+
+			$pdo->exec('ALTER TABLE `accounts` CHANGE COLUMN `accountkey` `accountkey` VARCHAR(65) NOT NULL;');
+			$pdo->exec('ALTER TABLE `accounts` CHANGE COLUMN `accountnumber` `accountnumber` VARCHAR(55) NOT NULL ;');
+			$pdo->exec('ALTER TABLE `transactions` CHANGE COLUMN `accountkey` `accountkey` VARCHAR(65) NOT NULL ;');
+
+			$orm->meta->update(array('metakey' => 'DBVersion', 'metavalue' => '5'));
+		}
+
+		// ==================================================
+		// Version upgrade -- 2017-06-25 -- Version: 6
+		// ====================
+		// Fix TescoBank extra data for transactions
+		// ==================================================
+		if ($currentVersion < 6) {
+			$changes = array();
+			foreach ($orm->transactions as $row) {
+				$r = iterator_to_array($row);
+				if (startsWith($r['source'], 'TescoBank/') && !startsWith($r['extra'], '{')) {
+					echo 'Updating: ', $r['hash'], "\n";
+
+					$orm->transactions->where('hash', $r['hash'])->update(array('extra' => json_encode(['transactiondate' => $r['extra']])));
+				}
+			}
+
+			$orm->meta->update(array('metakey' => 'DBVersion', 'metavalue' => '6'));
+		}
+
+		// ==================================================
+		// Version upgrade -- 2017-06-25 -- Version: 7
+		// ====================
+		// Longer HashCodes
+		// ==================================================
+		if ($currentVersion < 7) {
+			echo 'Upgrading to version: 7', "\n";
+
+			$pdo->exec('ALTER TABLE `transactions` CHANGE COLUMN `hash` `hash` VARCHAR(255) NOT NULL ;');
+			$pdo->exec('ALTER TABLE `taggedtransaction` CHANGE COLUMN `transaction` `transaction` VARCHAR(255) NOT NULL ;');
+
+			$orm->meta->update(array('metakey' => 'DBVersion', 'metavalue' => '7'));
 		}
 
 		// Commit the upgrade.

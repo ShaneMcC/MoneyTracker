@@ -466,7 +466,6 @@ V8JS
 				if ($cycleDate == '00') { continue; }
 				echo $this->cleanElement($dates->eq($i)), "\n";
 				$url = 'https://onlineservicing.creditcards.tescobank.com/Tesco_Consumer/Transactions.do?cycleDate=' . $cycleDate;
-
 				$page = $this->getPage($url, true);
 				$page = $this->getDocument($page);
 

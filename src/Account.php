@@ -144,6 +144,6 @@
 			});
 		}
 
-		function getAccountKey() { return preg_replace('#[^0-9]#', '', $this->getSortCode() . $this->getAccountNumber()); }
+		function getAccountKey() { return preg_replace('#[^0-9a-z]#i', '', $this->getSortCode() . $this->getAccountNumber()); }
 	}
 ?>

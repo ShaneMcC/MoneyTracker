@@ -36,7 +36,7 @@
 
 			<tr class="{{$balanceError ? 'error' : ''}}">
 			@$transNumber = 1 + ($transaction->getTime() - strtotime(date("Y-m-d", $transaction->getTime())));
-				<td class="date" data-value="{{$transaction->getTime()}}" data-nice="{{date("l d F Y", $transaction->getTime())}}">
+				<td class="date" data-value="{{$transaction->getTime()}}" data-nice="{{date("l d F Y H:i:s", $transaction->getTime())}}">
 					<span data-toggle="tooltip" data-html="true" title="Day: {{date("l", $transaction->getTime())}}<br>Transaction Number: {{$transNumber}}">
 					{{date("Y-m-d", $transaction->getTime())}}
 					</span>
@@ -52,6 +52,15 @@
 				<td class="transactiontags" data-tags="{{htmlspecialchars(json_encode($transaction->getTags()))}}" data-id="{{$transaction->getHash()}}" id="tags-{{$transaction->getHash()}}">
 				<div class="tagtext">
 					{{getTagHTML($transaction, $tags)}}
+					@ if (!empty($transaction->getExtra())) {
+						<div class="hidden extradata">
+							<table class="table">
+								@foreach ($transaction->getExtra() as $k => $v) {
+									<tr><th>{{$k}}</th><td>{{$v}}</td></tr>
+								@}
+							</table>
+						</div>
+					@ }
 				</div>
 				</td>
 			</tr>
@@ -153,6 +162,15 @@
 							</div>
 						</div>
 
+						<!-- Text input-->
+						<div class="form-group extradata">
+							<hr>
+							<label class="col-md-4 control-label" for="value">Extra Data</label>
+							<div class="col-md-5 output">
+
+							</div>
+						</div>
+
 					</fieldset>
 				</form>
 			</div>
@@ -176,11 +194,19 @@
 		date = $('td.date', $(clickedTag).closest('tr')).attr('data-nice');
 		description = $('td.description span', $(clickedTag).closest('tr')).text();
 		remaining = parseFloat($(clickedTag).attr('data-remaining')).toFixed(2);
+		extradata = $('div.extradata', $(clickedTag).closest('tr')).html();
 
 		$('#addTagForm input[name="transaction"]').val(transid);
 		$('#addTagForm input[name="description"]').val(description);
 		$('#addTagForm input[name="date"]').val(date);
 		$('#addTagForm input[name="value"]').val(remaining);
+
+		if (extradata) {
+			$('#addTagForm div.extradata div.output').html(extradata);
+			$('#addTagForm div.extradata').show();
+		} else {
+			$('#addTagForm div.extradata').hide();
+		}
 
 		$('#addTagModal').modal();
 		if ($(clickedTag).attr('data-usetag') != undefined) {
