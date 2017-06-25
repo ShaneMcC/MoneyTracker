@@ -35,6 +35,24 @@ There are support for 3 banks currently, `Halifax`, `TescoBank` and `HSBC`.
 
 Obviously support is limited to Banks I use, or Banks people have contributed support for.
 
+Monzo
+----------
+Monzo requires some configuration on the monzo developer portal to get going, as you need to create an oauth application.
+
+Go here: https://developers.monzo.com/api/playground
+Authorize Monzo.
+Then go to https://developers.monzo.com/apps/home and create a new Confidentail OAuth Client 
+Make a note of: Client ID, Client Secret
+
+Make sure that Redirect URLs is set to the same as `$config['baseurl'] . 'monzo.php'` (eg: `http://localhost/moneytracker/monzo.php`) or the redirect won't work.
+
+Now you can add a monzo bank to config.local.php:
+```
+   $config['bank'][] = new Monzo('<email address>', '<client id>', '<client secret>');
+```
+
+The first time you run it, you will need to do it from the CLI and follow the link provided and enter a code on the CLI, but after that it should work on it's own without user intervention.
+
 Halifax
 ----------
 Halifax requires no special treatment, and just works. Only tested with a single Current Account.
