@@ -17,7 +17,7 @@
 
 		private $deviceId = '';
 		private $securityDomain = 'www.mobile.security.hsbc.co.uk';
-		private $saasDomain = 'www.saas.hsbc.co.uk';
+		private $saasDomain = 'www.hsbc.co.uk';
 
 		private $accounts = null;
 		private $accountLinks = array();
@@ -170,17 +170,34 @@
 		 * @return true if login was successful, else false.
 		 */
 		public function login($fresh = false) {
+			// Reset saasDomain and Security Domain
+			$this->securityDomain = 'www.mobile.security.hsbc.co.uk';
+			$this->saasDomain = 'www.hsbc.co.uk';
+
 			$this->newBrowser(false);
-			$config = $this->browser->get('https://' . $this->saasDomain . '/content_static/mobile/1/5/18/0/config.json?' . time());
+			$config = $this->browser->get('https://' . $this->saasDomain . '/content_static/mobile/1/5/18/0/config-android.json?' . time());
 			$this->followFormRedirect($config);
 
-			$tokens = $this->hsbcPost('https://' . $this->saasDomain . '/1/2/?idv_cmd=idv.GetCommToken&nextPage=hsbc.pib.view-accounts&CHANNEL=MOBILE&function=Saas_Authentication', array('country' => 'UK', 'region' => 'HBEU', 'targetCam' => '30'), false);
+			$mspconfig = $this->browser->get('https://' . $this->saasDomain . '/content_static/mobile/1/5/18/0/0/MSP_config.txt?' . time());
+			$this->followFormRedirect($mspconfig);
+
+
+			$tokens = $this->hsbcPost('https://' . $this->saasDomain . '/1/2/?idv_cmd=idv.GetCommToken&nextPage=/group/gpib/cmn/layouts/default.html&CHANNEL=MOBILE&function=Saas_Authentication', array('country' => 'UK', 'region' => 'HBEU', 'targetCam' => '30'), false);
+
+			// You would expect this to be a thing, but it seems to be the wrong
+			// domain....
+			// $ipURL = $tokens->body->IP_URL;
+
+			// Set it by hand for now then.
+			$ipURL = 'https://' . $this->securityDomain . '/gsa/';
+
 			$tokenData = array('__initialAccess' => 'true',
 				               '__initialLogon' => 'true',
 				               'SAAS_TOKEN_ID' => $tokens->body->SAAS_TOKEN_ID,
 				               'SAAS_TOKEN_ASSERTION_ID' => $tokens->body->SAAS_TOKEN_ASSERTION_ID,
 				               );
-			$cookieGetter = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.SaaSSecurityCommand&CHANNEL=MOBILE', $tokenData, false);
+			$cookieGetter = $this->hsbcPost($ipURL . '?idv_cmd=idv.SaaSSecurityCommand&CHANNEL=MOBILE', $tokenData, false);
+
 
 			$loginData = array('initialAccess' => 'true',
 				               'nextPage' => 'MOBILE_CAM10_AUTHENTICATION',
@@ -190,7 +207,7 @@
 				               'COUNTRYTAG' => 'US',
 				               'userid' => $this->account,
 				               );
-			$initialLogin = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.Authentication&nextPage=MOBILE_CAM10_AUTHENTICATION&CHANNEL=MOBILE', $loginData, false);
+			$initialLogin = $this->hsbcPost($ipURL . '?idv_cmd=idv.Authentication&nextPage=MOBILE_CAM10_AUTHENTICATION&CHANNEL=MOBILE', $loginData, false);
 
 			if ($initialLogin == null) { return FALSE; }
 
@@ -214,14 +231,18 @@
 			              'OAUTH_DEVICE_ID' => 'null',
 			              );
 
-			$decoded = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.Authentication&nextPage=MOBILE_CAM30_AUTHENTICATION&CHANNEL=MOBILE&__flag_logon_timeout=Y&devicestatus=true', $data, false);
+			$decoded = $this->hsbcPost($ipURL . '?idv_cmd=idv.Authentication&nextPage=MOBILE_CAM30_AUTHENTICATION&CHANNEL=MOBILE&__flag_logon_timeout=Y&devicestatus=true', $data, false);
 
 			if ($decoded->body->lastLogonDate !== NULL) {
-				$interimTokens = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/SaaSMobileLogoutCAM0Resource/?CHANNEL=MOBILE', array(), false);
+				$interimTokens = $this->hsbcPost($ipURL . 'SaaSMobileLogoutCAM0Resource/?CHANNEL=MOBILE', array(), false);
 				$newTokenData = array('SAAS_TOKEN_ID' => $interimTokens->body->SAAS_TOKEN_ID,
 				                      'SAAS_TOKEN_ASSERTION_ID' => $interimTokens->body->SAAS_TOKEN_ASSERTION_ID,
 				                      );
-				$newParams = $this->hsbcPost('https://' . $this->saasDomain . '/1/2/?idv_cmd=idv.SaaSSecurityCommand&CHANNEL=MOBILE&function=postCommToken', $newTokenData, false);
+				// https://www.hsbc.co.uk/1/2/?idv_cmd=idv.SaaSSecurityCommand&CHANNEL=MOBILE&function=postCommToken
+				//
+				// This looks to be $tokens->body->postCommTokenAfterIPTerm, so
+				// lets use that!
+				$newParams = $this->hsbcPost($tokens->body->postCommTokenAfterIPTerm, $newTokenData, false);
 
 				$cmdIn = $this->hsbcPost('https://' . $this->saasDomain . '/1/3/mobile-1-5/entitlement-enquiry?ver=1.1&json=true', array('cmd_in' => 'cmd_in'), false);
 				$menuRefresh = $this->hsbcPost('https://' . $this->saasDomain . '/1/3/mobile-1-5/scm?ver=1.1&json=true', array('__cmd-All_MenuRefresh' => '__cmd-All_MenuRefresh'), false);
