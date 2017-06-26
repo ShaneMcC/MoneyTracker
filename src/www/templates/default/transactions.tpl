@@ -34,7 +34,7 @@
 				@$balanceError = (money_format('%.2n', $transaction->getBalance()) != money_format('%.2n', $newBalance));
 			@}
 
-			<tr class="{{$balanceError ? 'error' : ''}}">
+			<tr class="{{$balanceError ? 'error' : ''}}" data-id="{{$transaction->getHash()}}">
 			@$transNumber = 1 + ($transaction->getTime() - strtotime(date("Y-m-d", $transaction->getTime())));
 				<td class="date" data-value="{{$transaction->getTime()}}" data-nice="{{date("l d F Y H:i:s", $transaction->getTime())}}">
 					<span data-toggle="tooltip" data-html="true" title="Day: {{date("l", $transaction->getTime())}}<br>Transaction Number: {{$transNumber}}">
@@ -43,6 +43,7 @@
 				</td>
 				<td class="typecode"><span data-toggle="tooltip" title="{{$transaction->getType()}}">{{$transaction->getTypeCode()}}</span></td>
 				<td class="description">
+					<a class="infosign"><span class="glyphicon glyphicon-info-sign"></span></a>
 					<a class="searchicon" data-searchtext="{{$transaction->getDescription()}}" href="{[getNewPageLink('', array('searchstring' => $transaction->getDescription()))]}"><span class="glyphicon glyphicon-search"></span></a>
 					<span data-toggle="tooltip" title="{{$transaction->getHash()}}">{{$transaction->getDescription()}}</span>
 				</td>
@@ -109,6 +110,7 @@
 			<div class="modal-body">
 				<form id="addTagForm" class="form-horizontal">
 					<fieldset>
+						<input type="hidden" name="readOnly" value="yes">
 
 						<!-- Text input-->
 						<div class="form-group">
@@ -135,7 +137,7 @@
 						</div>
 
 						<!-- Select Basic -->
-						<div class="form-group">
+						<div class="form-group writeOnly">
 							<label class="col-md-4 control-label" for="tag">Tag</label>
 							<div class="col-md-8">
 								<select name="tag" class="form-control">
@@ -152,7 +154,7 @@
 						</div>
 
 						<!-- Text input-->
-						<div class="form-group">
+						<div class="form-group writeOnly">
 							<label class="col-md-4 control-label" for="value">Value</label>
 							<div class="col-md-5">
 								<div class="input-group">
@@ -177,7 +179,7 @@
 
 			<div class="modal-footer">
 				<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-				<button id="saveTag" type="button" class="btn btn-primary">Save changes</button>
+				<button id="saveTag" type="button" class="btn btn-primary writeOnly">Save changes</button>
 			</div>
 		</div>
 	</div>
@@ -189,7 +191,7 @@
 		$.bootstrapSortable(true, 'reversed');
 	});
 
-	function addTag(clickedTag) {
+	function addTag(clickedTag, readOnly) {
 		transid = $(clickedTag).parent().parent().attr('data-id');
 		date = $('td.date', $(clickedTag).closest('tr')).attr('data-nice');
 		description = $('td.description span', $(clickedTag).closest('tr')).text();
@@ -208,14 +210,31 @@
 			$('#addTagForm div.extradata').hide();
 		}
 
-		$('#addTagModal').modal();
-		if ($(clickedTag).attr('data-usetag') != undefined) {
-			$('#addTagForm select[name="tag"]').val($(clickedTag).attr('data-usetag'));
-			$('#addTagForm select[name="tag"]').css('background-color', '#FCF8E3')
-			$('#addTagForm input[name="value"]').css('background-color', '#FCF8E3')
+		$('#addTagForm input[name="transaction"]').prop('disabled', !readOnly);
+		$('#addTagForm input[name="description"]').prop('disabled', !readOnly);
+		$('#addTagForm input[name="date"]').prop('disabled', !readOnly);
+
+		if (readOnly) {
+			$('#addTagModalLabel').text('Transaction Info');
+			$('#addTagModal .writeOnly').hide();
+			$('#addTagForm input[name="readOnly"]').val('yes');
+
+			$('#addTagModal').modal();
 		} else {
-			$('#addTagForm select[name="tag"]').css('background-color', '')
-			$('#addTagForm input[name="value"]').css('background-color', '')
+			$('#addTagModalLabel').text('Tag Transaction');
+			$('#addTagModal .writeOnly').show();
+			$('#addTagForm input[name="readOnly"]').val('no');
+
+			$('#addTagModal').modal();
+
+			if ($(clickedTag).attr('data-usetag') != undefined) {
+				$('#addTagForm select[name="tag"]').val($(clickedTag).attr('data-usetag'));
+				$('#addTagForm select[name="tag"]').css('background-color', '#FCF8E3')
+				$('#addTagForm input[name="value"]').css('background-color', '#FCF8E3')
+			} else {
+				$('#addTagForm select[name="tag"]').css('background-color', '')
+				$('#addTagForm input[name="value"]').css('background-color', '')
+			}
 		}
 	}
 
@@ -237,11 +256,11 @@
 	});
 
 	$('td.transactiontags div.tagtext').on('click', 'span.untaggedTag', function() {
-		addTag(this);
+		addTag(this, false);
 	});
 
 	$('td.transactiontags div.tagtext').on('click', 'span.guessedTag', function() {
-		addTag(this);
+		addTag(this, false);
 	});
 
 	$('#addTagModal').keydown(function(e) {
@@ -254,6 +273,8 @@
 		transid = $('#addTagForm input[name="transaction"]').val();
 		tagid = $('#addTagForm select[name="tag"]').val();
 		value = $('#addTagForm input[name="value"]').val();
+		readOnly = $('#addTagForm input[name="readOnly"]').val();
+		if (readOnly != "no") { return; }
 
 		parentElement = document.getElementById('tags-' + transid);
 
@@ -273,5 +294,9 @@
 		var url = $.jurlp($(document).jurlp("url").toString());
 		url.query({'searchstring': $(this).data('searchtext')});
 		window.location = url.href;
+	});
+
+	$('.infosign').click(function() {
+		addTag(this, true);
 	});
 </script>

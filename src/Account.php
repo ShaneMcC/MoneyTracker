@@ -74,20 +74,24 @@
 			return $result;
 		}
 
+		static function getValOrDefault($array, $key, $default = NULL) {
+			return array_key_exists($key, $array) ? $array[$key] : $default;
+		}
+
 		static function fromArray($array) {
 			$obj = new Account();
-			$obj->mySortCode = $array['sortcode'];
-			$obj->myAccountNumber = $array['accountnumber'];
-			$obj->myType = $array['type'];
-			$obj->myDescription = $array['description'];
-			$obj->myOwner = $array['owner'];
-			$obj->myBalance = $array['lastbalance'];
-			$obj->myLimits = $array['limits'];
-			$obj->myAvailable = $array['available'];
-			$obj->myMisc = $array['misc'];
-			$obj->myExtra = $array['extra'];
-			$obj->mySource = $array['source'];
-			$obj->myHidden = $array['hidden'];
+			$obj->mySortCode = self::getValOrDefault($array, 'sortcode');
+			$obj->myAccountNumber = self::getValOrDefault($array, 'accountnumber');
+			$obj->myType = self::getValOrDefault($array, 'type');
+			$obj->myDescription = self::getValOrDefault($array, 'description');
+			$obj->myOwner = self::getValOrDefault($array, 'owner');
+			$obj->myBalance = self::getValOrDefault($array, 'lastbalance');
+			$obj->myLimits = self::getValOrDefault($array, 'limits');
+			$obj->myAvailable = self::getValOrDefault($array, 'available');
+			$obj->myMisc = self::getValOrDefault($array, 'misc');
+			$obj->myExtra = self::getValOrDefault($array, 'extra');
+			$obj->mySource = self::getValOrDefault($array, 'source');
+			$obj->myHidden = self::getValOrDefault($array, 'hidden');
 
 			return $obj;
 		}

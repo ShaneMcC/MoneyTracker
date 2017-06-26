@@ -102,7 +102,13 @@
 					// them with data from the donor mobile account.
 					$donor = $matched->toArray();
 					$merge = $ra->toArray();
-					foreach (array('lastbalance', 'available', 'misc', 'extra') as $k) { $merge[$k] = $donor[$k]; }
+
+					foreach (array('lastbalance', 'available', 'misc', 'extra') as $k) {
+						if (isset($donor[$k])) {
+							$merge[$k] = $donor[$k];
+						}
+					}
+
 					$new = Account::fromArray($merge);
 					$new->setTransactions($matched->getTransactions());
 

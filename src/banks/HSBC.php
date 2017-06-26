@@ -701,11 +701,13 @@
 			// So calculate it ourselves.
 			if ($acct['prodCatCde'] == 'CC') {
 				// First, correctly sort by date because CCs are silly.
+				// This sorts everything in reverse-order, newest transaction
+				// first.
 				usort($transactions, function($a, $b) {
 					// If the dates are the same, sort such that the lower
 					// txnIndex (newer transaction) is first.
 					if ($a['date'] == $b['date']) {
-						return $b['txnIndex'] - $a['txnIndex'];
+						return $a['txnIndex'] - $b['txnIndex'];
 					} else {
 						// If the dates are not the same, sort such that the
 						// newer date is first.

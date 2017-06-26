@@ -51,12 +51,35 @@
 		protected function newBrowser($loadCookies = true) {
 			parent::newBrowser($loadCookies);
 
-			$this->browser->setUserAgent('com.htsu.hsbcpersonalbanking/1.5.12.0 (Linux; U; Android 6.0; en; hammerhead) Apache-HttpClient/UNAVAILABLE (java 1.4)');
-			$this->browser->addHeader('native-app: htsu-rbwm-v1.5.12.0');
+			$this->browser->setUserAgent('com.htsu.hsbcpersonalbanking/1.5.18.0 (Linux; U; Android 6.0; en; hammerhead) Apache-HttpClient/UNAVAILABLE (java 1.4)');
+			$this->browser->addHeader('native-app: htsu-rbwm-v1.5.18.0');
 			$this->browser->addHeader('device-type: Android 6.0');
 			$this->browser->addHeader('device-status: {"rooted":"false"}');
 			$this->browser->addHeader('device-id: Android_Nexus 5_' . $this->deviceId);
 			$this->browser->addHeader('device-model: LGE Nexus 5');
+
+			// $this->browser->addHeader('imsi_serial_id:	111111111111111');
+			// $this->browser->addHeader('mcc:	12345');
+			$this->browser->addHeader('gps_long_long:	0.0');
+			$this->browser->addHeader('wifi_bssid_connected:	ff:ee:dd:cc:bb:aa');
+			$this->browser->addHeader('data_enabled:	0');
+			$this->browser->addHeader('hooking_frameworks:	0');
+			$this->browser->addHeader('gps_location_enabled:	1');
+			$this->browser->addHeader('untrusted_screeen_readers:	0');
+			$this->browser->addHeader('device_root:	0');
+			$this->browser->addHeader('application_language:	en');
+			$this->browser->addHeader('running_on_emulator:	0');
+			$this->browser->addHeader('time_zone:	GMT+00:00');
+			$this->browser->addHeader('wifi_status:	1');
+			$this->browser->addHeader('data_network_name:	');
+			$this->browser->addHeader('untrusted_keyboard:	0');
+			$this->browser->addHeader('native_code_hooks:	0');
+			$this->browser->addHeader('application_repackaged:	0');
+			$this->browser->addHeader('gps_long_lat:	0.0');
+			$this->browser->addHeader('os_version:	Android 6.0');
+			$this->browser->addHeader('debugger_attactched:	0');
+			$this->browser->addHeader('ADRUM_1:	isMobile:true');
+			$this->browser->addHeader('ADRUM:	isAjax:true');
 		}
 
 		/**
@@ -64,6 +87,58 @@
 		 */
 		public function __toString() {
 			return 'HSBCMobile/' . $this->account;
+		}
+
+		/**
+		 * Handle any form-based redirects.
+		 *
+		 * @param $page (By Ref) Page that we want to check for redirects.
+		 */
+		public function followFormRedirect(&$page) {
+			while (true) {
+				$oldURL = $this->browser->getUrl();
+
+				$tempForm = preg_match('#document\.tempForm\.submit#Ums', $page) || preg_match("#document\.getElementById\('tempForm'\)\.submit\(\)#Ums", $page);
+				$autoSubmitForm = preg_match('#var autoSubmitForm = document.getElementById\("([^"]+)"\);#Ums', $page, $m);
+				$windowLocationHref = preg_match('#window.location.href = "([^"]+)";.*<body>Please wait...</body>#Ums', $page, $m2);
+
+				if ($tempForm) {
+					$method = 'tempForm';
+					$page = $this->browser->submitFormByName('tempForm');
+				} else if ($autoSubmitForm) {
+					$method = 'autoSubmitForm';
+					$page = $this->browser->submitFormByName($m[1]);
+				} else if ($windowLocationHref) {
+					$method = 'windowLocationHref';
+					$urlInfo = parse_url($this->browser->getUrl());
+
+					if ($m2[1][0] == '/') {
+						$newURL = $urlInfo['scheme'] . '://' . $urlInfo['host'] . $m2[1];
+						if (isset($urlInfo['query']) && !empty($urlInfo['query'])) {
+							$newURL .= '&';
+							$newURL .= $urlInfo['query'];
+						}
+					} else {
+						$newURL = $m2[1];
+					}
+
+					$page = $this->browser->get($newURL);
+					if (empty($page)) {
+						// Sometimes the page comes back empty... try again.
+						// echo 'REPEATED: ';
+						$page = $this->browser->get($newURL);
+					}
+
+				} else {
+					break;
+				}
+
+				// echo $oldURL, ' -[', $method, ']-> ', $this->browser->getUrl(), "\n";
+			}
+		}
+
+		public function handleRedirects(&$page) {
+			$this->followFormRedirect($page);
 		}
 
 		private function hsbcPost($url, $data, $trylogin = true) {
@@ -76,6 +151,7 @@
 			$data['json'] = '';
 
 			$page = $this->browser->post($url, $data);
+			$this->followFormRedirect($page);
 			$decoded = @json_decode($page);
 
 			if ($trylogin && ($decoded === null || $decoded->header->statusCode != '0000')) {
@@ -95,14 +171,8 @@
 		 */
 		public function login($fresh = false) {
 			$this->newBrowser(false);
-			$config = $this->browser->get('https://' . $this->saasDomain . '/content_static/mobile/1/5/12/0/config.json?' . time());
-
-			$domainData = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.SaaSSecurityCommand&CHANNEL=MOBILE&SaaS_FUNCTION_NAME=DetermineSiteID&nextPage=MOBILE_RETRIEVE_DOMAIN_URL&locale=en', array(), false);
-
-			var_dump($domainData);
-			die();
-
-			$this->securityDomain = $domainData->body->domainName;
+			$config = $this->browser->get('https://' . $this->saasDomain . '/content_static/mobile/1/5/18/0/config.json?' . time());
+			$this->followFormRedirect($config);
 
 			$tokens = $this->hsbcPost('https://' . $this->saasDomain . '/1/2/?idv_cmd=idv.GetCommToken&nextPage=hsbc.pib.view-accounts&CHANNEL=MOBILE&function=Saas_Authentication', array('country' => 'UK', 'region' => 'HBEU', 'targetCam' => '30'), false);
 			$tokenData = array('__initialAccess' => 'true',
@@ -122,8 +192,6 @@
 				               );
 			$initialLogin = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.Authentication&nextPage=MOBILE_CAM10_AUTHENTICATION&CHANNEL=MOBILE', $loginData, false);
 
-var_dump($initialLogin);
-
 			if ($initialLogin == null) { return FALSE; }
 
 			$wanted = explode(',', $initialLogin->body->rccDigits);
@@ -135,7 +203,7 @@ var_dump($initialLogin);
 				$digits[] = $this->memorableinfo[$d];
 			}
 
-			$interimCookieGetter = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.AuthenticateAtMSFCommand&nextPage=MOBILE_CAM3040_FIRST&CHANNEL=MOBILE', array(), false);
+			$interimCookieGetter = $this->hsbcPost('https://' . $this->securityDomain . '/?idv_cmd=idv.AuthenticateAtMSFCommand&nextPage=MOBILE_CAM3040_FIRST&CHANNEL=MOBILE', array(), false);
 
 			$data = array('__logonFlag' => 'true',
 			              '__checkSOTPStatus' => 'true',
@@ -146,11 +214,7 @@ var_dump($initialLogin);
 			              'OAUTH_DEVICE_ID' => 'null',
 			              );
 
-var_dump($data);
-
 			$decoded = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/?idv_cmd=idv.Authentication&nextPage=MOBILE_CAM30_AUTHENTICATION&CHANNEL=MOBILE&__flag_logon_timeout=Y&devicestatus=true', $data, false);
-
-var_dump($decoded);
 
 			if ($decoded->body->lastLogonDate !== NULL) {
 				$interimTokens = $this->hsbcPost('https://' . $this->securityDomain . '/gsa/SaaSMobileLogoutCAM0Resource/?CHANNEL=MOBILE', array(), false);
@@ -161,15 +225,8 @@ var_dump($decoded);
 
 				$cmdIn = $this->hsbcPost('https://' . $this->saasDomain . '/1/3/mobile-1-5/entitlement-enquiry?ver=1.1&json=true', array('cmd_in' => 'cmd_in'), false);
 				$menuRefresh = $this->hsbcPost('https://' . $this->saasDomain . '/1/3/mobile-1-5/scm?ver=1.1&json=true', array('__cmd-All_MenuRefresh' => '__cmd-All_MenuRefresh'), false);
-
-var_dump('TRUE');
-die();
-
 				return true;
 			}
-
-var_dump('FALSE');
-die();
 
 			return false;
 		}
@@ -351,7 +408,7 @@ die();
 				$transaction['date'] = ($isCC) ? $trans->txnDate : $trans->date;
 				$transaction['typecode'] = ($isCC) ? ($trans->ccTxnAmtDrCr ? 'DR' : 'CR') : $trans->type;
 				$transaction['type'] = $this->getType($transaction['typecode']);
-				$transaction['description'] = preg_replace('#\s+#', ' ', ($isCC) ? $trans->ccTxnMerchant : implode(' // ', $trans->details));
+				$transaction['description'] = preg_replace('#\s+#', ' ', implode(' // ', (($isCC) ? str_split($trans->ccTxnMerchant, 35) : $trans->details)));
 
 				// Fix some known brokenness...
 				if ($transaction['description'] == 'ADDED NET INT') { $transaction['description'] = 'ADDED NET INTEREST'; }

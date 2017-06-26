@@ -43,7 +43,7 @@
 				$opts['http']['header'] = 'Authorization: Bearer ' . $this->permdata['authData']['access_token'];
 			}
 			$context  = stream_context_create($opts);
-			$result = file_get_contents('https://api.monzo.com' . $method, false, $context);
+			$result = @file_get_contents('https://api.monzo.com' . $method, false, $context);
 
 			return @json_decode($result, true);
 		}
@@ -64,29 +64,29 @@
 				} else {
 					// Try and refresh our access token.
 					if (isset($this->permdata['authData']['refresh_token'])) {
-						unset($this->permdata['authData']);
-
 						$postData = http_build_query(array("grant_type" => "refresh_token",
 						                                   "client_id" => $this->clientid,
 						                                   "client_secret" => $this->clientSecret,
 						                                   "refresh_token" => $this->permdata['authData']['refresh_token'],
 						                                  )
 						                            );
+
 						$authData = file_post_contents("https://api.monzo.com/oauth2/token", $postData);
 
 						$this->permdata['authData'] = @json_decode($authData, true);
+						$this->savePermData();
+						return true;
 					} else {
 						// No refresh token means we need new auth data.
 						unset($this->permdata['authData']);
 					}
-
-					$this->savePermData();
 				}
 			} else {
 				// Auth Data may be incomplete, remove it.
 				unset($this->permdata['authData']);
-				$this->savePermData();
 			}
+
+			$this->savePermData();
 
 			// If we do not have valid authdata, try and get some.
 			if (!isset($this->permdata['authData']) || !isset($this->permdata['authData']['access_token'])) {
