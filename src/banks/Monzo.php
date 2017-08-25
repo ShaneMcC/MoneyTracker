@@ -180,6 +180,7 @@
 
 			$this->accounts = array();
 			$accountData = $this->monzoGet('/accounts');
+
 			foreach ($accountData['accounts'] as $acc) {
 				$account = new Account();
 				$account->setSource($this->__toString());
@@ -234,19 +235,34 @@
 			$transactionData = $this->monzoGet('/transactions?expand[]=merchant&account_id=' . $accData['id']);
 			$lastBalance = NULL;
 
+			$tlist = new SortedLinkedList($transactionData['transactions'], new Monzo_SLLNF());
 			$transactions = [];
-			foreach ($transactionData['transactions'] as $trans) {
-				if (isset($trans['decline_reason'])) { continue; }
+
+			$tlist->rewind();
+			while ($tlist->valid()) {
+				$node = $tlist->current();
+				$trans = &$node->data;
+				$lastBalance = ($node->prev == null) ? null : $node->prev->data['account_balance'];
+
+				if (isset($trans['decline_reason'])) { $tlist->next(); continue; }
 
 				// Pull out the data
 				$transaction = array();
+				if (!isset($trans['isSettlement'])) { $trans['isSettlement'] = false; }
 
 				$transaction['date'] = strtotime($trans['created']);
-				$transaction['description'] = preg_replace('#(\t|\s{2,})#', ' // ', $trans['description']);
+
+				$transaction['description'] = $trans['isSettlement'] ? 'Settlement Changes: ' : '';
+				$transaction['description'] .= preg_replace('#(\t|\s{2,})#', ' // ', $trans['description']);
 				if (isset($trans['notes']) && !empty($trans['notes'])) {
 					$transaction['description'] .= ' // ' . $trans['notes'];
 				}
+
 				$transaction['amount'] = $this->parseBalance($trans['amount']);
+
+				// Settlement transactions won't have a balance yet, set one.
+				if (!isset($trans['account_balance'])) { $trans['account_balance'] = $lastBalance + $trans['amount']; }
+
 				$transaction['balance'] = $this->parseBalance($trans['account_balance']);
 
 				$transaction['typecode'] = $trans['amount'] < 0 ? 'DR' : 'CR';
@@ -266,58 +282,66 @@
 					$transaction['extra']['merchant_address'] = $trans['merchant']['address']['short_formatted'];
 				}
 
-				$wantBalance = $lastBalance + $trans['amount'];
-				if ($lastBalance != NULL && $trans['account_balance'] != $wantBalance) {
-					if ($trans['currency'] != $trans['local_currency']) {
-						// Currency changes between the time we paid it, and the
-						// time it was settled.
-						//
-						// Fix the current transaction to be the amount it was
-						// when it was paid, and add a separate settlement
-						// transaction.
+				if ($trans['currency'] != $trans['local_currency']) {
+					$transaction['extra']['local_currency'] = $trans['local_currency'];
+					$transaction['extra']['local_amount'] = $this->parseBalance($trans['local_amount']);
+				}
 
-						$settlement = $transaction;
+				if ($trans['isSettlement']) {
+					$transaction['extra']['hashcode'] .= '-settlement';
+					$transaction['extra']['settlment_for'] = $trans['id'];
+					$transaction['extra']['original_date'] = strtotime($trans['original_date']);
+				} else {
+					$wantBalance = $lastBalance + $trans['amount'];
 
-						$transaction['amount'] = $this->parseBalance($trans['account_balance'] - $lastBalance);
+					if ($lastBalance != NULL && $trans['account_balance'] != $wantBalance) {
+						if ($trans['currency'] != $trans['local_currency']) {
+							// Currency conversion rate changes between the time
+							// we paid it, and the time it was settled.
+							//
+							// The 'amount' value is equal to the post-settlement rate.
+							// The 'account_balance' value is equal to what our balance was after the initial pre-settlement conversion.
+							//
+							// Fix the current transaction to be the amount it was
+							// when it was first paid, and add a separate settlement
+							// transaction that we deal with later.
 
-						$settlement['date'] = strtotime($trans['settled']);
-						$settlement['amount'] = $this->parseBalance($wantBalance - $trans['account_balance']);
-						$settlement['description'] = 'Settlement Changes: ' . $settlement['description'];
+							// The actual amount paid initially is the difference
+							// between the current balance and the previous balance.
+							$transaction['amount'] = $this->parseBalance($trans['account_balance'] - $lastBalance);
 
-						$settlement['extra']['hashcode'] .= '-settlement';
-						$settlement['extra']['settlment_for'] = $trans['id'];
-						$settlement['extra']['original_date'] = $transaction['date'];
-						unset($settlement['extra']['txid']);
+							// Create settlement transaction to parse later.
+							$settlement = $trans;
 
-						// We'll fix this later.
-						unset($settlement['balance']);
+							// Set the date of the new transaction to the
+							// settled date so that it gets inserted into the
+							// list in the right place.
+							$settlement['created'] = $trans['settled'];
+							$settlement['original_date'] = $trans['created'];
 
-						$transactions[] = $settlement;
+							// The settlement value is the difference between
+							// the post-settlement 'amount' and the difference
+							// between the 2 balances
+							$settlement['amount'] = $trans['amount'] - ($trans['account_balance'] - $lastBalance);
+
+							// Unset the account_balance so that we recalculate
+							// it later based on the position in the list.
+							//
+							// (Monzo does haxy magic to silently correct balances)
+							unset($settlement['account_balance']);
+							$settlement['isSettlement'] = true;
+							$tlist->insert($settlement);
+						}
 					}
 				}
-				$lastBalance = $trans['account_balance'];
 
 				$transactions[] = $transaction;
+
+				$tlist->next();
 			}
 
-			// Sort by date to fix the settlement transactions.
-			usort($transactions, function($a, $b) {
-				$res = $a['date'] - $b['date'];
-				if ($res == 0 && isset($a['extra']['original_date']) && isset($b['extra']['original_date'])) {
-					$res = $a['extra']['original_date'] - $b['extra']['original_date'];
-				}
-
-				return $res;
-			});
-
-			$lastBalance = NULL;
 			$lastDate = NULL;
 			foreach ($transactions as $transaction) {
-				if (!isset($transaction['balance'])) {
-					$transaction['balance'] = $lastBalance + $transaction['amount'];
-				}
-				$lastBalance = $transaction['balance'];
-
 				// Fix equal-date transactions to ensure we pull them out
 				// in the right order later.
 				if ($transaction['date'] <= $lastDate) { $transaction['date'] = $lastDate + 1;}
@@ -328,4 +352,16 @@
 			}
 		}
 	}
-?>
+
+
+	class Monzo_SLLN extends SortedLinkedListNode {
+		public function getKey() {
+			return new DateTime($this->data['created']);
+		}
+	}
+
+	class Monzo_SLLNF extends SortedLinkedListNodeFactory {
+		public function newNode($data) {
+			return new Monzo_SLLN($data, null, null);
+		}
+	}

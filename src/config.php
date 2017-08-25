@@ -1,6 +1,7 @@
 <?php
 	require_once(dirname(__FILE__) . '/3rdparty/notorm/NotORM.php');
 	require_once(dirname(__FILE__) . '/functions.php');
+	require_once(dirname(__FILE__) . '/SortedLinkedList.php');
 	require_once(dirname(__FILE__) . '/Bank.php');
 	require_once(dirname(__FILE__) . '/Account.php');
 	require_once(dirname(__FILE__) . '/Transaction.php');
