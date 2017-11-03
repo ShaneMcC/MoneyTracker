@@ -20,6 +20,8 @@
 		                            'www.tescobank.com' => '',
 		                            'login.myproducts.tescobank.com' => '');
 
+		protected $lastotp = '';
+
 		/**
 		 * Create a TescoBank.
 		 *
@@ -92,7 +94,6 @@
 					$page = $this->browser->get('https://www.tescobank.com/sss/auth');
 				}
 			}
-
 			// Fill out the login form and submit it.
 			$this->browser->setFieldById('login-uid', $this->account);
 			$page = $this->browser->submitFormById('login_uid_form');
@@ -100,7 +101,6 @@
 				throw new ScraperException('Error getting TescoBank Login page.');
 			}
 			$document = $this->getDocument($page);
-
 			// Dear tesco, fuck off...
 			// Tell them a bit about ourselves...
 			$cookie = $this->browser->getCurrentCookieValue('ArcotAuthDid');
@@ -111,14 +111,12 @@
 			$this->browser->setFieldByName('DeviceID', $cookie === false ? $deviceID : $cookie);
 			$this->browser->setFieldByName('processreq', 'true');
 			$this->browser->setFieldByName('StateDataAttrNm', $document->find('input[name="StateDataAttrNm"]')->attr("value"));
-
 			$page = $this->browser->submitFormByName('CollectMFPToEvaluate');
 			$document = $this->getDocument($page);
 
 			if ($document->find('input[name="StateDataAttrNm"]')->attr("value") == "") {
 				throw new ScraperException('TescoBank failed initial data submission.');
 			}
-
 			// Fuck off some more.
 			// More about us! Yay.
 			$this->browser->setFieldByName('AUTHTOKEN_PRESENT', (isset($this->permdata['otpdata']) ? 'true' : 'false'));
@@ -144,19 +142,43 @@
 			if (count($needed) == 0) {
 				throw new ScraperException('TescoBank failed login data submission.');
 			}
-			// Check if we need to enter a password/otp.
-			$passNeeded = $document->find('input#PASSWORD');
-			if (count($passNeeded) > 0) {
-				$this->browser->setFieldById('AUTHTOKEN_PRESENT', 'true');
-				$servertime = $document->find('input#SERVERTIME')->attr("value");
-				$mytime = round(microtime(true) * 1000);
-				$this->browser->setFieldById('DIFFINTIME', ($mytime - $servertime));
-				$this->browser->setFieldById('PROPOSALTIME', $mytime);
-				$this->browser->setFieldById('GENERATEDOTP', $this->generateOTP($this->permdata['otpdata'], $mytime));
-			}
 
-			$page = $this->browser->clickSubmitById('NEXTBUTTON');
-			$document = $this->getDocument($page);
+			$passNeeded = false;
+			while (true) {
+				// Check if we need to enter a password/otp.
+				$passNeeded = $document->find('input#PASSWORD');
+				if (count($passNeeded) > 0) {
+					$this->browser->setFieldById('AUTHTOKEN_PRESENT', 'true');
+					$servertime = $document->find('input#SERVERTIME')->attr("value");
+
+					while (true) {
+						$mytime = round(microtime(true) * 1000);
+						$thisotp = $this->generateOTP($this->permdata['otpdata'], $mytime);
+
+						if ($thisotp == $this->lastotp) {
+							echo 'Waiting for OTP to change...', "\n";
+							sleep(5);
+						} else {
+							$this->lastotp = $thisotp;
+
+							$this->browser->setFieldById('DIFFINTIME', ($mytime - $servertime));
+							$this->browser->setFieldById('PROPOSALTIME', $mytime);
+							$this->browser->setFieldById('GENERATEDOTP', $thisotp);
+							break;
+						}
+					}
+				}
+
+				$page = $this->browser->clickSubmitById('NEXTBUTTON');
+				$document = $this->getDocument($page);
+
+				if (count($document->find('input#PASSWORD')) > 0) {
+					echo 'Password still required.', "\n";
+					sleep(1);
+				} else {
+					break;
+				}
+			}
 
 			// At this point, we might be asked for a text-message based OTP.
 			$OTPNeeded = $document->find('input#MOBILE_NR_DISPLAY');
@@ -435,7 +457,7 @@ V8JS
 			if (!$this->isLoggedIn($page)) { return false; }
 
 			// The CC server doesn't get along with PHP...
-			$this->browser->setStreamContext(array('ssl' => array('ciphers' => 'AES256-SHA')));
+			$this->browser->setStreamContext(array('ssl' => array('ciphers' => 'AES256-SHA', 'crypto_method' => STREAM_CRYPTO_METHOD_ANY_CLIENT)));
 
 			$page = $this->browser->submitFormById('manage-creditcard-account-no-js-form');
 			// Check again if we are logged in, sometimes the SSO sucks.
