@@ -136,7 +136,7 @@
 		 * @return Correct balance (eg: "1.00" or "-1.00")
 		 */
 		private function parseBalance($balance) {
-			if (empty($balance)) { return ''; }
+			if (empty($balance)) { return 0; }
 			return $balance / 100;
 		}
 
