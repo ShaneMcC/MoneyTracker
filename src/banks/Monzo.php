@@ -136,7 +136,7 @@
 		 * @return Correct balance (eg: "1.00" or "-1.00")
 		 */
 		private function parseBalance($balance) {
-			if (empty($balance)) { return 0; }
+			if (empty($balance) && $balance !== 0) { return ''; }
 			return $balance / 100;
 		}
 
@@ -187,10 +187,18 @@
 				$account->setType($acc['type']);
 				$account->setOwner($this->account);
 
-				if ($acc['type'] != 'uk_prepaid') { continue; }
+				if (!in_array($acc['type'], ['uk_prepaid', 'uk_retail'])) {
+					echo 'Unknown MONZO Account type: ', $acc['type'], "\n";
+					continue;
+				}
 
-				$account->setSortCode('00-00-03');
-				$account->setAccountNumber($acc['id']);
+				if (isset($acc['sort_code'])) {
+					$account->setSortCode($acc['sort_code']);
+					$account->setAccountNumber($acc['account_number']);
+				} else {
+					$account->setSortCode('00-00-03');
+					$account->setAccountNumber($acc['id']);
+				}
 
 				$accountKey = preg_replace('#[^0-9a-z]#i', '', $account->getSortCode() . $account->getAccountNumber());
 				$this->accountLinks[$accountKey] = array('id' => $acc['id']);
@@ -233,16 +241,29 @@
 			$accData = $this->accountLinks[$accountKey];
 
 			$transactionData = $this->monzoGet('/transactions?expand[]=merchant&account_id=' . $accData['id']);
+
 			$lastBalance = NULL;
 
 			$tlist = new SortedLinkedList($transactionData['transactions'], new Monzo_SLLNF());
 			$transactions = [];
 
-			$tlist->rewind();
+			// *grumble*
+			$noValidBalance = ($account->getType() == 'uk_retail');
+
+			if ($noValidBalance) {
+				$tlist->fastforward();
+				$lastBalance = $account->getBalance() * 100;
+			} else {
+				$tlist->rewind();
+			}
 			while ($tlist->valid()) {
 				$node = $tlist->current();
+
 				$trans = &$node->data;
-				$lastBalance = ($node->prev == null) ? null : $node->prev->data['account_balance'];
+
+				if (!$noValidBalance) {
+					$lastBalance = ($node->prev == null) ? null : $node->prev->data['account_balance'];
+				}
 
 				if (isset($trans['decline_reason'])) { $tlist->next(); continue; }
 
@@ -260,10 +281,25 @@
 
 				$transaction['amount'] = $this->parseBalance($trans['amount']);
 
-				// Settlement transactions won't have a balance yet, set one.
-				if (!isset($trans['account_balance'])) { $trans['account_balance'] = $lastBalance + $trans['amount']; }
+				// Some account types don't have a real balance (*grumble*)
+				// So we need to work it out.
+				if ($noValidBalance) {
+					$transaction['balance'] = $this->parseBalance($lastBalance);
+					$lastBalance -= $trans['amount'];
 
-				$transaction['balance'] = $this->parseBalance($trans['account_balance']);
+					// If we haven't settled this transaction yet, throw it out
+					// and all transactions we've noticed so far, as we don't
+					// actually know if these are right yet. *grumble*
+					if (!isset($trans['settled']) || strtotime($trans['settled']) >= time()) {
+						$transactions = [];
+						continue;
+					}
+				} else {
+					// Settlement transactions won't have a balance yet, set one.
+					if (!isset($trans['account_balance'])) { $trans['account_balance'] = $lastBalance + $trans['amount']; }
+
+					$transaction['balance'] = $this->parseBalance($trans['account_balance']);
+				}
 
 				$transaction['typecode'] = $trans['amount'] < 0 ? 'DR' : 'CR';
 				if (isset($trans['metadata']['is_topup']) && $trans['metadata']['is_topup']) {
@@ -291,7 +327,7 @@
 					$transaction['extra']['hashcode'] .= '-settlement';
 					$transaction['extra']['settlment_for'] = $trans['id'];
 					$transaction['extra']['original_date'] = strtotime($trans['original_date']);
-				} else {
+				} else if (!$noValidBalance) {
 					$wantBalance = $lastBalance + $trans['amount'];
 
 					if ($lastBalance != NULL && $trans['account_balance'] != $wantBalance) {
@@ -337,7 +373,15 @@
 
 				$transactions[] = $transaction;
 
-				$tlist->next();
+				if ($noValidBalance) {
+					$tlist->prev();
+				} else {
+					$tlist->next();
+				}
+			}
+
+			if ($noValidBalance) {
+				$transactions = array_reverse($transactions);
 			}
 
 			$lastDate = NULL;
