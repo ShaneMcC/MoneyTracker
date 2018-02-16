@@ -265,7 +265,14 @@
 					$lastBalance = ($node->prev == null) ? null : $node->prev->data['account_balance'];
 				}
 
-				if (isset($trans['decline_reason'])) { $tlist->next(); continue; }
+				if (isset($trans['decline_reason'])) {
+					if ($noValidBalance) {
+						$tlist->prev();
+					} else {
+						$tlist->next();
+					}
+					continue;
+				}
 
 				// Pull out the data
 				$transaction = array();
