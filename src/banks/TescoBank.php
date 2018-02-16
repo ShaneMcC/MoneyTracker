@@ -312,6 +312,11 @@ V8JS
 			$accountdetails = $page->find('#sv-creditcard-product');
 			$items = $page->find('div.product', $accountdetails);
 			$owner = $this->account;
+
+			if (count($items) == 0) {
+				throw new ScraperException('TescoBank found no accounts...');
+			}
+
 			for ($i = 0; $i < count($items); $i++) {
 				// Get the values
 				$type = $this->cleanElement($page->find('h2.product-name a', $items->eq($i)));
