@@ -90,6 +90,7 @@
 				$tempForm = preg_match('#document\.tempForm\.submit#Ums', $page) || preg_match("#document\.getElementById\('tempForm'\)\.submit\(\)#Ums", $page);
 				$autoSubmitForm = preg_match('#var autoSubmitForm = document.getElementById\("([^"]+)"\);#Ums', $page, $m);
 				$windowLocationHref = preg_match('#window.location.href = "([^"]+)";.*<body>Please wait...</body>#Ums', $page, $m2);
+				$redirectFunction = preg_match('#function redirect\(\){[^}]+location.href = "([^"]+)";[^}]+#Ums', $page, $m3);
 
 				if ($tempForm) {
 					$method = 'tempForm';
@@ -97,8 +98,14 @@
 				} else if ($autoSubmitForm) {
 					$method = 'autoSubmitForm';
 					$page = $this->browser->submitFormByName($m[1]);
-				} else if ($windowLocationHref) {
-					$method = 'windowLocationHref';
+				} else if ($windowLocationHref || $redirectFunction) {
+
+					if ($windowLocationHref) {
+						$method = 'windowLocationHref';
+					} else if ($redirectFunction) {
+						$method = 'redirectFunction';
+						$m2 = $m3;
+					}
 					$urlInfo = parse_url($this->browser->getUrl());
 
 					if ($m2[1][0] == '/') {
@@ -117,7 +124,6 @@
 						// echo 'REPEATED: ';
 						$page = $this->browser->get($newURL);
 					}
-
 				} else {
 					break;
 				}
@@ -153,9 +159,9 @@
 			$page = $this->getDocument($page);
 			// echo "Home", "\n";
 			// Move to login page
-			$element = $page->find('a[title="Log on to Personal Internet Banking"');
+			$element = $page->find('a.login-button');
 			$loginurl = $element->eq(0)->attr('href');
-			$page = $this->browser->get('https://www.hsbc.co.uk' . $loginurl);
+			$page = $this->browser->get($loginurl);
 			$this->followFormRedirect($page);
 			// echo "Login", "\n";
 			// Fill out the form and submit it.
