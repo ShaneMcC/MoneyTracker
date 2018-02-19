@@ -191,7 +191,7 @@
 		$.bootstrapSortable(true, 'reversed');
 	});
 
-	function addTag(clickedTag, readOnly) {
+	function addTag(clickedTag, readOnly, autoSave) {
 		transid = $(clickedTag).parent().parent().attr('data-id');
 		date = $('td.date', $(clickedTag).closest('tr')).attr('data-nice');
 		description = $('td.description span', $(clickedTag).closest('tr')).text();
@@ -225,8 +225,6 @@
 			$('#addTagModal .writeOnly').show();
 			$('#addTagForm input[name="readOnly"]').val('no');
 
-			$('#addTagModal').modal();
-
 			if ($(clickedTag).attr('data-usetag') != undefined) {
 				$('#addTagForm select[name="tag"]').val($(clickedTag).attr('data-usetag'));
 				$('#addTagForm select[name="tag"]').css('background-color', '#FCF8E3')
@@ -234,6 +232,12 @@
 			} else {
 				$('#addTagForm select[name="tag"]').css('background-color', '')
 				$('#addTagForm input[name="value"]').css('background-color', '')
+			}
+
+			if (autoSave) {
+				$('#saveTag').click();
+			} else {
+				$('#addTagModal').modal();
 			}
 		}
 	}
@@ -256,11 +260,11 @@
 	});
 
 	$('td.transactiontags div.tagtext').on('click', 'span.untaggedTag', function() {
-		addTag(this, false);
+		addTag(this, false, false);
 	});
 
-	$('td.transactiontags div.tagtext').on('click', 'span.guessedTag', function() {
-		addTag(this, false);
+	$('td.transactiontags div.tagtext').on('click', 'span.guessedTag', function(e) {
+		addTag(this, false, (e.altKey == true ? true : false));
 	});
 
 	$('#addTagModal').keydown(function(e) {
@@ -281,14 +285,19 @@
 		$('#addTagModal').modal('hide');
 		$('div.tagtext', parentElement).html('');
 
+		saveTag(transid, tagid, value);
+	});
+
+	function saveTag(transid, tagid, value) {
 		$.ajax({
 			url: '{[getWebLocation]}addtag',
 			type: 'POST',
 			data: {transaction: transid, tagid: tagid, value: value},
 		}).done(function(data) {
+			parentElement = document.getElementById('tags-' + transid);
 			$('div.tagtext', parentElement).html(data);
 		});
-	});
+	}
 
 	$('.searchicon').click(function() {
 		var url = $.jurlp($(document).jurlp("url").toString());
@@ -297,6 +306,6 @@
 	});
 
 	$('.infosign').click(function() {
-		addTag(this, true);
+		addTag(this, true, false);
 	});
 </script>
