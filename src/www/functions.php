@@ -48,83 +48,98 @@
 		}
 	}
 
-	function getValidPeriods() {
+	function getDefaultPeriods() {
 		global $__validPeriods;
 		if (!isset($__validPeriods)) {
-			$__validPeriods = array('last7days' => array('name' => 'Last 7 days',
-			                                             'start' => strtotime('-7 days 00:00:00'),
-			                                             'end' => time()
-			                                             ),
-			                        'last14days' => array('name' => 'Last 14 days',
-			                                             'start' => strtotime('-14 days 00:00:00'),
-			                                             'end' => time()
-			                                             ),
-			                        'last180days' => array('name' => 'Last 180 days',
-			                                             'start' => strtotime('-180 days 00:00:00'),
-			                                             'end' => time()
-			                                             ),
-			                        'last365days' => array('name' => 'Last 365 days',
-			                                             'start' => strtotime('-365 days 00:00:00'),
-			                                             'end' => time()
-			                                             ),
-			                        'this' => array('name' => 'This Month',
-			                                        'start' => mktime(0, 0, 0, date("m"), 1, date("Y")),
-			                                        'end' => time(),
-			                                        ),
-			                        'last' => array('name' => 'Previous Month',
-			                                        'start' => mktime(0, 0, 0, date("m")-1, 1, date("Y")),
-			                                        'end' => mktime(0, 0, 0, date("m"), 1, date("Y")),
-			                                        ),
-			                        '2last' => array('name' => '2 months ago',
-			                                         'start' => mktime(0, 0, 0, date("m")-2, 1, date("Y")),
-			                                         'end' => mktime(0, 0, 0, date("m")-1, 1, date("Y")),
-			                                         ),
-			                        '3last' => array('name' => '3 months ago',
-			                                         'start' => mktime(0, 0, 0, date("m")-3, 1, date("Y")),
-			                                         'end' => mktime(0, 0, 0, date("m")-2, 1, date("Y")),
-			                                         ),
-			                        'last2' => array('name' => 'Previous 2 months',
-			                                         'start' => mktime(0, 0, 0, date("m")-2, 1, date("Y")),
-			                                         'end' => mktime(0, 0, 0, date("m"), 1, date("Y")),
-			                                         ),
-			                        'last3' => array('name' => 'Previous 3 months',
-			                                         'start' => mktime(0, 0, 0, date("m")-3, 1, date("Y")),
-			                                         'end' => mktime(0, 0, 0, date("m"), 1, date("Y")),
-			                                         ),
-			                        'last6' => array('name' => 'Previous 6 months',
-			                                         'start' => mktime(0, 0, 0, date("m")-6, 1, date("Y")),
-			                                         'end' => mktime(0, 0, 0, date("m"), 1, date("Y")),
-			                                         ),
-			                        'last12' => array('name' => 'Previous 12 months',
-			                                         'start' => mktime(0, 0, 0, date("m")-12, 1, date("Y")),
-			                                         'end' => mktime(0, 0, 0, date("m"), 1, date("Y")),
-			                                         ),
-			                        'thisyear' => array('name' => 'This year ('. date("Y") . ')',
-			                                            'start' => mktime(0, 0, 0, 1, 1, date("Y")),
-			                                            'end' => time(),
-			                                            ),
-			                        'lastyear' => array('name' => 'Last year (' . (date("Y") - 1) . ')',
-			                                            'start' => mktime(0, 0, 0, 1, 1, date("Y") - 1),
-			                                            'end' => mktime(0, 0, 0, 1, 1, date("Y")),
-			                                            ),
-						'2year' => array('name' => '2 years ago (' . (date("Y") - 2) . ')',
-						                    'start' => mktime(0, 0, 0, 1, 1, date("Y") - 2),
-						                    'end' => mktime(0, 0, 0, 1, 1, date("Y") - 1),
-						                    ),
-			                        );
+			$__validPeriods = array();
+
+			$__validPeriods[] = array('name' => 'Last 7 days',
+			                          'start' => strtotime('-7 days 00:00:00'),
+			                         );
+			$__validPeriods[] = array('name' => 'Last 14 days',
+			                          'start' => strtotime('-14 days 00:00:00'),
+			                         );
+			$__validPeriods[] = array('name' => 'Last 180 days',
+			                          'start' => strtotime('-180 days 00:00:00'),
+			                         );
+			$__validPeriods[] = array('name' => 'Last 365 days',
+			                          'start' => strtotime('-365 days 00:00:00'),
+			                         );
+			$__validPeriods[] = array('name' => 'This Month',
+			                          'start' => mktime(0, 0, 0, date("m"), 1, date("Y")),
+			                         );
+			$__validPeriods[] = array('name' => 'Previous Month',
+			                          'start' => mktime(0, 0, 0, date("m")-1, 1, date("Y")),
+			                          'end' => mktime(0, 0, 0, date("m"), 1, date("Y")),
+			                         );
+			$__validPeriods[] = array('name' => '2 months ago',
+			                          'start' => mktime(0, 0, 0, date("m")-2, 1, date("Y")),
+			                          'end' => mktime(0, 0, 0, date("m")-1, 1, date("Y")),
+			                         );
+			$__validPeriods[] = array('name' => '3 months ago',
+			                          'start' => mktime(0, 0, 0, date("m")-3, 1, date("Y")),
+			                          'end' => mktime(0, 0, 0, date("m")-2, 1, date("Y")),
+			                         );
+			$__validPeriods[] = array('name' => 'Previous 2 months',
+			                          'start' => mktime(0, 0, 0, date("m")-2, 1, date("Y")),
+			                          'end' => mktime(0, 0, 0, date("m"), 1, date("Y")),
+			                         );
+			$__validPeriods[] = array('name' => 'Previous 3 months',
+			                          'start' => mktime(0, 0, 0, date("m")-3, 1, date("Y")),
+			                          'end' => mktime(0, 0, 0, date("m"), 1, date("Y")),
+			                         );
+			$__validPeriods[] = array('name' => 'Previous 6 months',
+			                          'start' => mktime(0, 0, 0, date("m")-6, 1, date("Y")),
+			                          'end' => mktime(0, 0, 0, date("m"), 1, date("Y")),
+			                         );
+			$__validPeriods[] = array('name' => 'Previous 12 months',
+			                          'start' => mktime(0, 0, 0, date("m")-12, 1, date("Y")),
+			                          'end' => mktime(0, 0, 0, date("m"), 1, date("Y")),
+			                         );
+			$__validPeriods[] = array('name' => 'This year ('. date("Y") . ')',
+			                          'start' => mktime(0, 0, 0, 1, 1, date("Y")),
+			                         );
+			$__validPeriods[] = array('name' => 'Last year (' . (date("Y") - 1) . ')',
+			                          'start' => mktime(0, 0, 0, 1, 1, date("Y") - 1),
+			                          'end' => mktime(0, 0, 0, 1, 1, date("Y")),
+			                         );
+			$__validPeriods[] = array('name' => '2 years ago (' . (date("Y") - 2) . ')',
+						              'start' => mktime(0, 0, 0, 1, 1, date("Y") - 2),
+						              'end' => mktime(0, 0, 0, 1, 1, date("Y") - 1),
+						             );
+
+			$__validPeriods[] = array('name' => 'Custom');
 		}
 
 		return $__validPeriods;
 	}
 
-	function getPeriod($name = '') {
-		$periods = getValidPeriods();
+	function getPeriod($data) {
+		$now = time();
 
-		if (empty($name) || !isset($periods[$name])) {
-			$name = 'last14days';
+		if (preg_match('#^([0-9]+)-([0-9]+)$#', $data, $m)) {
+			$start = $m[1];
+			$end = $m[2];
+			$period = $data;
+		} else if (preg_match('#^([0-9]+)$#', $data, $m)) {
+			$start = $m[1];
+			$end = $now;
+			$period = $data;
+		} else {
+			$start = strtotime('-14 days 00:00:00');
+			$end = $now;
+			$period = $start;
 		}
 
-		return array($periods[$name]['name'], $periods[$name]['start'], $periods[$name]['end']);
+		foreach (getDefaultPeriods() as $p) {
+			if (!isset($p['start'])) { continue; }
+
+			if ($p['start'] == $start && ((isset($p['end']) && $p['end'] == $end) || (!isset($p['end']) && $now == $end))) {
+				return array($p['name'], $start, $end);
+			}
+		}
+
+		return array("Custom", $start, $end);
 	}
 
 

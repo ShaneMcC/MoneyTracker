@@ -5,8 +5,16 @@
 		public function pageConstructor() {
 			$this->tf()->setVar('title', 'Money Tracker :: Data');
 			$this->tf()->setVar('showPeriods', true);
-			$q = $this->getQuery();
-			$this->tf()->setVar('thisPeriod', isset($q['period']) ? $q['period'] : 'last14days');
+
+			$params = $this->getQuery();
+
+			$period = isset($params['period']) ? $params['period'] : '';
+			list($name, $start, $end) = getPeriod($period);
+			$this->tf()->setVar('periodName', $name);
+			$this->tf()->setVar('start', $start);
+			$this->tf()->setVar('end', $end);
+			$this->tf()->setVar('period', $period);
+			$this->tf()->setVar('thisPeriod', $period);
 		}
 
 		/** {@inheritDoc} */
@@ -19,12 +27,9 @@
 			if (isset($params['tags']) || isset($params['cat'])) { $t->tagOnly(); }
 			else { $t->catOnly(); }
 
+			$start = $this->tf()->getVar('start');
+			$end = $this->tf()->getVar('end');
 
-			list($period, $start, $end) = getPeriod(isset($params['period']) ? $params['period'] : '');
-
-			$this->tf()->setVar('start', $start);
-			$this->tf()->setVar('end', $end);
-			$this->tf()->setVar('period', $period);
 			$t->start($start)->end($end);
 
 			$t2 = clone $t;

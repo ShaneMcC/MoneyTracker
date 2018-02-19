@@ -24,10 +24,12 @@
 
 		@ if ($showPeriods) {
 			<li class="nav-header">Change Period</li>
-			@ foreach (getValidPeriods() as $period => $data) {
+			@ foreach (getDefaultPeriods() as $data) {
+				@$period = isset($data['start']) ? $data['start'] : '';
+				@if (isset($data['end'])) { $period .= '-' . $data['end']; }
 
 				@$class = array();
-				@if ($thisPeriod == $period) { $class[] = 'active'; }
+				@if ($data['name'] == $periodName) { $class[] = 'active'; }
 				@$class = implode(' ', $class);
 				<li class="{{$class}}"><a style="padding-left: 15px;" class="periodselection" data-period="{{$period}}"><span class="glyphicon glyphicon-dashboard"></span> {{$data['name']}}</a></li>
 			@}

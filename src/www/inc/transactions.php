@@ -6,7 +6,14 @@
 			$this->tf()->setVar('title', 'Money Tracker :: Transactions');
 			$this->tf()->setVar('showPeriods', true);
 			$q = $this->getQuery();
-			$this->tf()->setVar('thisPeriod', isset($q['period']) ? $q['period'] : 'last14days');
+
+			$period = isset($q['period']) ? $q['period'] : '';
+			list($name, $start, $end) = getPeriod($period);
+			$this->tf()->setVar('periodName', $name);
+			$this->tf()->setVar('start', $start);
+			$this->tf()->setVar('end', $end);
+			$this->tf()->setVar('period', $period);
+			$this->tf()->setVar('thisPeriod', $period);
 
 			$showHiddenAccounts = isset($q['showHiddenAccounts']) ? parseBool($q['showHiddenAccounts']) : false;
 			$this->tf()->setVar('showHiddenAccounts', $showHiddenAccounts);
@@ -25,9 +32,12 @@
 			$db = $this->tf()->getVar('db', null);
 
 			$params = $this->getQuery();
+
+			$period = $this->tf()->getVar('period');
+			$start = $this->tf()->getVar('start');
+			$end = $this->tf()->getVar('end');
+
 			$this->tf()->setVar('hideEmpty', isset($params['period']));
-			$periodInput = isset($params['period']) ? $params['period'] : 'last14days';
-			list($period, $start, $end) = getPeriod($periodInput);
 
 			$p = $this->getParams();
 			$singleAccount = false;
@@ -46,11 +56,6 @@
 				$tags[$t['tagid']] = $t['category'] . ' :: ' . $t['tag'];
 				$jsontags[$t['category']][$t['tag']] = $t['tagid'];
 			}
-
-			$this->tf()->setVar('start', $start);
-			$this->tf()->setVar('end', $end);
-			$this->tf()->setVar('period', $period);
-			$this->tf()->setVar('periodid', $periodInput);
 
 			$this->tf()->setVar('tags', $tags);
 			$this->tf()->setVar('jsontags', $jsontags);

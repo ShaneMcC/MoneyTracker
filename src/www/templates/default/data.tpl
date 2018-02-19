@@ -1,4 +1,4 @@
-<h2> Transactions for {{$period}} - {[date('Y-m-d', $start)]} to {[date('Y-m-d', $end)]} </h2>
+<h2> Transactions for {{$periodName}} - {[date('Y-m-d', $start)]} to {[date('Y-m-d', $end)]} </h2>
 
 <div class="bs-callout-info">
 	<strong>Incoming Total:</strong> {{money_format('%.2n', $chart['incoming']['total'])}}
