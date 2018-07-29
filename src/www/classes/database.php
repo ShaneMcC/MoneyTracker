@@ -131,9 +131,19 @@
 					$guessTags[$t[0]]++;
 				}
 			}
-			arsort($guessTags);
-			reset($guessTags);
-			return key($guessTags);
+
+			if (empty($guessTags)) {
+				global $config;
+				foreach ($config['guessedtags'] as $t) {
+					if (preg_match($t['regex'], $transaction->getDescription())) {
+						return $t['tag'];
+					}
+				}
+			} else {
+				arsort($guessTags);
+				reset($guessTags);
+				return key($guessTags);
+			}
 		}
 	}
 

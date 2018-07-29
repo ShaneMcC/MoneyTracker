@@ -39,6 +39,10 @@
 	$config['web']['theme'] = 'SomeTheme';
 	setlocale(LC_MONETARY, 'en_GB.UTF-8');
 
+	// Temporary guessed tags regexes until I add a UI for it.
+	$config['guessedtags'] = array();
+	$config['guessedtags'][] = ['regex' => '#Test.*#i', 'tag' => 1];
+
 	// Bank object(s) used for updates.
 	$config['bank'] = array();
 	$config['bank'][] = new HSBC('IB123456789', '010101', '##');

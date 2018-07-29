@@ -99,7 +99,7 @@
 		tagid = $(this).attr('data-tagid');
 		oldName = $(this).attr('data-tagname');
 
-		bootbox.prompt({title: "New name for Tag",
+		bootbox.prompt({title: "New name for Tag Id " + tagid,
 		                value: oldName,
 		                callback: function(result) {
 			if (result !== null && result.length > 0) {

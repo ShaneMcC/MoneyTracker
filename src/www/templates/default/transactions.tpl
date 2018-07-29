@@ -17,6 +17,8 @@
 		</thead>
 
 		<tbody>
+		@$totalin = 0;
+		@$totalout = 0;
 		@$lastBalance = null;
 		@$count = 0;
 		@foreach ($account->getTransactions() as $transaction) {
@@ -25,6 +27,8 @@
 			@if ($transaction->getTime() > $end) { continue; }
 			@if (!isStringMatch($transaction->getDescription(), $searchstring)) { continue; }
 			@if ($onlyUntagged && count($transaction->getTags()) > 0) { continue; }
+
+			@if ($transaction->getAmount() > 0) { $totalin += $transaction->getAmount(); } else { $totalout += abs($transaction->getAmount()); }
 
 			@$count++
 
@@ -88,6 +92,33 @@
 		@}
 		@$totalcount += $count;
 		</tbody>
+		<br><br>
+		<tfoot>
+			<tr>
+				<td colspan=3>&nbsp;</td>
+				<th>Total In</th>
+				<td>&pound;
+					@echo $totalin;
+				</td>
+				<td>&nbsp;</td>
+			</tr>
+			<tr>
+				<td colspan=3>&nbsp;</td>
+				<th>Total Out</th>
+				<td>&pound;
+					@echo $totalout;
+				</td>
+				<td>&nbsp;</td>
+			</tr>
+			<tr>
+				<td colspan=3>&nbsp;</td>
+				<th>Difference</th>
+				<td>&pound;
+					@echo $totalin - $totalout;
+				</td>
+				<td>&nbsp;</td>
+			</tr>
+		</tfoot>
 
 		</table>
 		</div>
@@ -299,10 +330,12 @@
 		});
 	}
 
-	$('.searchicon').click(function() {
+	$('.searchicon').click(function(e) {
 		var url = $.jurlp($(document).jurlp("url").toString());
 		url.query({'searchstring': $(this).data('searchtext')});
-		window.location = url.href;
+		if (!e.ctrlKey) {
+			window.location = url.href;
+		}
 	});
 
 	$('.infosign').click(function() {
