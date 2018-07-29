@@ -617,6 +617,20 @@
 				$transaction['datestr'] = $txn['txnPostDate'];
 				$transaction['date'] = strtotime($transaction['date'] . ' Europe/London');
 
+				if ($acct['prodCatCde'] == 'CC') {
+					// Remove un-needed bits from the txnDetail.
+					// $txn['txnDetail'][0] == Description
+					// $txn['txnDetail'][1] == BusinessType
+					// $txn['txnDetail'][2] == Town
+					// $txn['txnDetail'][3] == Country
+					// $txn['txnDetail'][4] == Payment Method
+					// $txn['txnDetail'][5] == Pin Used
+					// $txn['txnDetail'][6] == Card Used
+					// $txn['txnDetail'][7] == Exchange Rate */
+					$bits = $txn['txnDetail'];
+					$txn['txnDetail'] = [$bits[0]];
+				}
+
 				$transaction['description'] = implode(' // ', $txn['txnDetail']);
 				$transaction['description'] = preg_replace('#[\n\s]+#ims', ' ', $transaction['description']);
 				$transaction['description'] = html_entity_decode($transaction['description']);
