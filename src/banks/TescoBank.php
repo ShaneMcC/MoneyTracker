@@ -222,10 +222,33 @@
 			// Now progress the last bit.
 			$page = $this->browser->submitFormById('returnform');
 
+			$this->followFormRedirect($page);
+
 			// Never save cookies, tesco bank is flakey as fuck.
 			return $this->isLoggedIn($page);
 		}
 
+		/**
+		 * Handle any form-based redirects.
+		 *
+		 * @param $page (By Ref) Page that we want to check for redirects.
+		 */
+		public function followFormRedirect(&$page) {
+			while (true) {
+				$oldURL = $this->browser->getUrl();
+
+				$autoSubmitForm = preg_match('#psp-baseline-autosubmit-form#Ums', $page);
+
+				if ($autoSubmitForm) {
+					$method = 'autoSubmitForm';
+					$page = $this->browser->submitFormById('psp-baseline-autosubmit-form');
+				} else {
+					break;
+				}
+
+				// echo $oldURL, ' -[', $method, ']-> ', $this->browser->getUrl(), "\n";
+			}
+		}
 		protected function generateOTP($xml, $time) {
 			if (!class_exists('v8js')) { throw new Exception('TescoBank currently requires v8js.'); }
 			$pass = $this->password;
@@ -251,7 +274,9 @@ V8JS
 		}
 
 		public function isLoggedIn($page) {
-			return (strpos($page, 'You\'re logged in to Online Banking') !== FALSE) || (strpos($page, '<a href="/Tesco_Consumer/ChooseServiceReqType.do">Manage your account</a>') !== FALSE);
+			return (strpos($page, 'You\'re logged in to Online Banking') !== FALSE)
+			       || (strpos($page, '<a href="/Tesco_Consumer/ChooseServiceReqType.do">Manage your account</a>') !== FALSE)
+			       || (strpos($page, '<script>var __APP_STATE__=') !== FALSE);
 		}
 
 		/**
@@ -301,52 +326,55 @@ V8JS
 					}
 				}
 			}
-			$page = $this->getPage('https://www.tescobank.com/portal/auth/portal/sv/overview/SVInitialDataWindow?action=1&action=initialDataNoScript');
+			$page = $this->getPage('https://myproducts.tescobank.com/');
 			if (!$this->isLoggedIn($page)) { return $this->accounts; }
 
-			$page = $this->getPage('https://www.tescobank.com/banking-overview/summary');
-			$page = $this->getDocument($page);
+			$oldHeaders = $this->browser->getAdditionalHeaders();
+			$this->browser->addHeader("Content-type: application/json");
+			$page = $this->getPage('https://myproducts.tescobank.com/api/products');
+			$this->browser->setAdditionalHeaders($oldHeaders);
 
 			$accounts = array();
 
-			$accountdetails = $page->find('#sv-creditcard-product');
-			$items = $page->find('div.product', $accountdetails);
-			$owner = $this->account;
+			$page = json_decode($page, true);
+			$results = $page['results'];
 
-			if (count($items) == 0) {
+			if (count($results) == 0) {
 				throw new ScraperException('TescoBank found no accounts...');
 			}
 
-			for ($i = 0; $i < count($items); $i++) {
+			for ($i = 0; $i < count($results); $i++) {
 				// Get the values
-				$type = $this->cleanElement($page->find('h2.product-name a', $items->eq($i)));
+				$item = $results[$i];
+				$type = $item['productName'];
+
+				// We only understand credit cards.
+				if (!isset($item['creditCardDetails'])) { continue; }
 
 				// Tesco annoyingly hides the full number of the account, so we use fake sort-code to pad-out the account-key a bit.
 				// 00-XX-YY is not a valid sort code. Use 00-01 for tesco credit card.
 				$sortcode = '00-00-01';
-				$number = $this->cleanElement($page->find('dd.card-number', $items->eq($i)));
+				$number = $item['creditCardDetails']['cardNumber'];
 
-				$balance = $this->parseBalance($this->cleanElement($page->find('dd.current-balance', $items->eq($i))));
+				$balance = $item['creditCardDetails']['creditLimit'] - $item['creditCardDetails']['availableCredit'];
 
 				// Finally, create an account object.
 				$account = new Account();
 				$account->setSource($this->__toString());
 				$account->setType($type);
-				$account->setOwner($owner);
+				$account->setOwner('');
 				$account->setSortCode($sortcode);
 				$account->setAccountNumber($number);
 				$account->setBalance(0 - $balance); // "Balance" given is how much is owed
 
 				$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
-				$this->accountLinks[$accountKey] = $page->find('h2.product-name a', $items->eq($i))->attr("href");
+				$this->accountLinks[$accountKey] = 'https://myproducts.tescobank.com/api/credit-care?targetId=' . $item['productId'];
 
-				$available = $this->parseBalance($this->cleanElement($page->find('dd.available-credit', $items->eq($i))));
-				$account->setAvailable($available);
+				$account->setAvailable($item['creditCardDetails']['availableCredit']);
 
 				if ($transactions) {
 					$this->updateTransactions($account, $historical, $historicalVerbose);
 				}
-
 				$this->accounts[] = $account;
 			}
 
@@ -458,23 +486,14 @@ V8JS
 		public function updateTransactions($account, $historical = false, $historicalVerbose = true, $failOnSSO = false) {
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
-			$page = $this->getPage('https://www.tescobank.com/banking-overview/' . $this->accountLinks[$accountKey]);
+			$page = $this->getPage($this->accountLinks[$accountKey]);
+			$data = json_decode($page, true);
+
+			$oldHeaders = $this->browser->getAdditionalHeaders();
+			$page = $this->browser->post($data['data']['redirectUrl'], http_build_query(['SAMLResponse' => $data['data']['samlResponse']]), 'application/x-www-form-urlencoded');
+			$this->browser->setAdditionalHeaders($oldHeaders);
+
 			if (!$this->isLoggedIn($page)) { return false; }
-
-			// The CC server doesn't get along with PHP...
-			$this->browser->setStreamContext(array('ssl' => array('ciphers' => 'AES256-SHA', 'crypto_method' => STREAM_CRYPTO_METHOD_ANY_CLIENT)));
-
-			$page = $this->browser->submitFormById('manage-creditcard-account-no-js-form');
-			// Check again if we are logged in, sometimes the SSO sucks.
-			if (!$this->isLoggedIn($page)) {
-				// SSO Failed, do a fresh login...
-				// TODO: Figure out a better way than doing this.
-				echo 'SSO Fail.';
-				if ($failOnSSO) { return false; }
-				$this->login(true);
-
-				return $this->updateTransactions($account, $historical, $historicalVerbose, true);
-			}
 
 			// Get last statement balance.
 			preg_match('#<strong>Statement balance</strong></td>[^"]+"normalText">([^<]+)</td>#', $page, $m);
@@ -553,8 +572,6 @@ V8JS
 
 			// Reset the stream context.
 			$this->browser->setStreamContext(array());
-
-echo "Done Transactions.\n";
 		}
 	}
 ?>
