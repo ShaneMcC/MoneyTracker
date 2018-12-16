@@ -276,7 +276,8 @@ V8JS
 		public function isLoggedIn($page) {
 			return (strpos($page, 'You\'re logged in to Online Banking') !== FALSE)
 			       || (strpos($page, '<a href="/Tesco_Consumer/ChooseServiceReqType.do">Manage your account</a>') !== FALSE)
-			       || (strpos($page, '<script>var __APP_STATE__=') !== FALSE);
+			       || (strpos($page, '<script>var __APP_STATE__=') !== FALSE)
+			       || (strpos($page, 'var __APP_PAYLOAD__=') !== FALSE);
 		}
 
 		/**
