@@ -330,7 +330,7 @@
 		 *                           description ok?
 		 * @return accounts associated with this login.
 		 */
-		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false) {
+		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false, $historicalLimit = 0) {
 			// Check if we only want cached data.
 			if ($useCached) {
 				// Check if we have some accounts.
@@ -379,7 +379,7 @@
 				$this->accountLinks[$accountKey] = array('id' => $acc->id, 'type' => $acc->type);
 
 				if ($transactions) {
-					$this->updateTransactions($account, $historical, $historicalVerbose);
+					$this->updateTransactions($account, $historical, $historicalVerbose, $historicalLimit = 0);
 				}
 
 				$accounts[] = $account;
@@ -398,7 +398,7 @@
 		 *                           collected for historical, or is a single-line
 		 *                           description ok?
 		 */
-		public function updateTransactions($account, $historical = false, $historicalVerbose = true) {
+		public function updateTransactions($account, $historical = false, $historicalVerbose = true, $historicalLimit = 0) {
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
 
@@ -420,6 +420,8 @@
 			$items = $isCC ? $decoded->body->histories[0]->ccTxns : $decoded->body->histories;
 
 			$lastBalance = $isCC ? $this->parseBalance($decoded->body->balance) : 0;
+
+			// TODO: Historical?
 
 			foreach ($items as $trans) {
 				echo 'Got Item', "\n";

@@ -155,7 +155,8 @@
 		 *                           description ok?
 		 * @return accounts associated with this login.
 		 */
-		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false) {
+		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false, $historicalLimit = 0) {
+
 			// Check if we only want cached data.
 			if ($useCached) {
 				// Check if we have some accounts.
@@ -207,7 +208,7 @@
 				$account->setBalance($this->parseBalance($balance['balance']));
 
 				if ($transactions) {
-					$this->updateTransactions($account, $historical, $historicalVerbose);
+					$this->updateTransactions($account, $historical, $historicalVerbose, $historicalLimit);
 				}
 
 				$this->accounts[] = $account;
@@ -234,7 +235,7 @@
 		 *                           collected for historical, or is a single-line
 		 *                           description ok?
 		 */
-		public function updateTransactions($account, $historical = false, $historicalVerbose = true) {
+		public function updateTransactions($account, $historical = false, $historicalVerbose = true, $historicalLimit = 0) {
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9a-z]#i', '', $account->getSortCode() . $account->getAccountNumber());
 
@@ -256,7 +257,9 @@
 			} else {
 				$tlist->rewind();
 			}
+			$count = 0;
 			while ($tlist->valid()) {
+				if ($count++ > 10000) { throw new Exception('Monzo: Something went wrong with tlist loop, exceeded 10k transacions.'); }
 				$node = $tlist->current();
 
 				$trans = &$node->data;

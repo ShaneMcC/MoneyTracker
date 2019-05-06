@@ -20,15 +20,18 @@
 		private $pdo = null;
 		private $debug = false;
 		private $forceHistorical = false;
+		private $historicalLimit = 0;
 
-		public function __construct($dbdata, $debug = false, $forceHistorical = false) {
+		public function __construct($dbdata, $debug = false, $forceHistorical = false, $historicalLimit = 0) {
 			$this->pdo = getPDO($dbdata);
 			$this->db = new NotORM($this->pdo);
 			$this->debug = $debug;
 			$this->forceHistorical = $forceHistorical;
+			$this->historicalLimit = $historicalLimit;
 		}
 
 		public function import($bank) {
+			echo 'Importing from ', $bank->__toString(), "\n";
 			try {
 				$accounts = $bank->getAccounts(true);
 			} catch (Exception $e) {
@@ -44,6 +47,7 @@
 				$key = $row['accountkey'];
 				$accData = $a->toArray();
 				$getHistorical = $this->forceHistorical;
+				$historicalLimit = $this->historicalLimit;
 
 				if ($key == NULL) {
 					$key = $accData['accountkey'];
@@ -56,7 +60,7 @@
 
 				if ($getHistorical) {
 					echo 'ALL transactions', "\n";
-					$bank->updateTransactions($a, true, true);
+					$bank->updateTransactions($a, true, true, $historicalLimit);
 				} else {
 					echo 'RECENT transactions', "\n";
 					$bank->updateTransactions($a, false, false);

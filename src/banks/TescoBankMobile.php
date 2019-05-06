@@ -189,7 +189,7 @@
 		}
 
 
-		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false) {
+		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false, $historicalLimit = 0) {
 			// Check if we only want cached data.
 			if ($useCached) {
 				// Check if we have some accounts.
@@ -235,7 +235,7 @@
 				$this->accountReq[$accountKey] = $req;
 
 				if ($transactions) {
-					$this->updateTransactions($account, $historical, $historicalVerbose);
+					$this->updateTransactions($account, $historical, $historicalVerbose, $historicalLimit);
 				}
 
 				$accounts[] = $account;
@@ -244,7 +244,7 @@
 			return $accounts;
 		}
 
-		public function updateTransactions($account, $historical = false, $historicalVerbose = true, $failOnSSO = false) {
+		public function updateTransactions($account, $historical = false, $historicalVerbose = true, $historicalLimit = 0) {
 			if (empty($this->myID)) { $this->login(); }
 			$account->clearTransactions();
 

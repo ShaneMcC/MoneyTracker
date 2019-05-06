@@ -309,7 +309,7 @@ V8JS
 		 *                           description ok?
 		 * @return accounts associated with this login.
 		 */
-		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false) {
+		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false, $historicalLimit = 0) {
 			// Check if we only want cached data.
 			if ($useCached) {
 				// Check if we have some accounts.
@@ -374,7 +374,7 @@ V8JS
 				$account->setAvailable($item['creditCardDetails']['availableCredit']);
 
 				if ($transactions) {
-					$this->updateTransactions($account, $historical, $historicalVerbose);
+					$this->updateTransactions($account, $historical, $historicalVerbose, $historicalLimit);
 				}
 				$this->accounts[] = $account;
 			}
@@ -482,9 +482,8 @@ V8JS
 		 * @param $historicalVerbose (Default: false) Should verbose data be
 		 *                           collected for historical, or is a single-line
 		 *                           description ok?
-		 * @param $failOnSSO (Default: false) Should we fail if SSO fails?
 		 */
-		public function updateTransactions($account, $historical = false, $historicalVerbose = true, $failOnSSO = false) {
+		public function updateTransactions($account, $historical = false, $historicalVerbose = true, $historicalLimit = 0) {
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
 			$page = $this->getPage($this->accountLinks[$accountKey]);
@@ -539,6 +538,7 @@ V8JS
 				// If we're not asking for historical, then we don't need to
 				// go back any further.
 				if (!$historical) { break; }
+				else if ($olderTransactions[count($olderTransactions) - 1]['date'] <= $historicalLimit) { break; }
 			}
 
 			// Now go through the transactions bottom-top so that we have them in the

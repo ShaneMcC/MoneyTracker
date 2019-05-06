@@ -306,7 +306,7 @@
 		 *                           description ok?
 		 * @return accounts associated with this login.
 		 */
-		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false) {
+		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false, $historicalLimit = 0) {
 			// Check if we only want cached data.
 			if ($useCached) {
 				// Check if we have some accounts.
@@ -332,14 +332,14 @@
 			if (!$this->isLoggedIn($page)) { die('Unable to login'); return $this->accounts; }
 
 			if ($this->webVersion == HSBC::VER_NOV2016) {
-				$this->getAccounts_Nov2016($useCached, $transactions, $historical, $historicalVerbose);
+				$this->getAccounts_Nov2016($useCached, $transactions, $historical, $historicalVerbose, $historicalLimit);
 			}
 
 			return $this->accounts;
 		}
 
 
-		private function getAccounts_Nov2016($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false) {
+		private function getAccounts_Nov2016($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false, $historicalLimit = 0) {
 			$contextPath = 'https://' . $this->servicesDomain . $this->getAppSetting('contextPath');
 
 			$url = $contextPath . '/channel/proxy/accountDataSvc/rtrvAcctSumm';
@@ -430,7 +430,7 @@
 				$this->accountData[$accountKey] = $acct;
 
 				if ($transactions) {
-					$this->updateTransactions($account, $historical, $historicalVerbose);
+					$this->updateTransactions($account, $historical, $historicalVerbose, $historicalLimit);
 				}
 
 
@@ -552,13 +552,14 @@
 		 * @param $historicalVerbose (Default: false) Should verbose data be
 		 *                           collected for historical, or is a single-line
 		 *                           description ok?
+		 * @param $historicalLimit (Default: 0) How far back in time to go.
 		 */
-		public function updateTransactions($account, $historical = false, $historicalVerbose = true) {
+		public function updateTransactions($account, $historical = false, $historicalVerbose = true, $historicalLimit = 0) {
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
 
 			if ($this->webVersion == HSBC::VER_NOV2016) {
-				$this->updateTransactions_Nov2016($account, $historical, $historicalVerbose);
+				$this->updateTransactions_Nov2016($account, $historical, $historicalVerbose, $historicalLimit);
 			}
 		}
 
@@ -571,8 +572,9 @@
 		 * @param $historicalVerbose (Default: false) Should verbose data be
 		 *                           collected for historical, or is a single-line
 		 *                           description ok?
+		 * @param $historicalLimit (Default: 0) How far back in time to go.
 		 */
-		public function updateTransactions_Nov2016($account, $historical, $historicalVerbose) {
+		public function updateTransactions_Nov2016($account, $historical, $historicalVerbose, $historicalLimit) {
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
 			if (!isset($this->accountData[$accountKey])) { return false; }
 			$acct = $this->accountData[$accountKey];
@@ -589,6 +591,8 @@
 				$txnHistType = 'U';
 				$toDate = "";
 			}
+
+			// TODO: Handle Historical?
 
 			$rtrvTxnSumm = ["retreiveTxnSummaryFilter" => ["txnDatRnge" => ["fromDate" => $fromDate, "toDate" => $toDate],
 			                                               "numOfRec" => -1,

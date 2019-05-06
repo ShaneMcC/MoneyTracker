@@ -125,7 +125,7 @@
 		 *                           description ok?
 		 * @return accounts associated with this login.
 		 */
-		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false) {
+		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false, $historicalLimit = 0) {
 			// Check if we only want cached data.
 			if ($useCached) {
 				// Check if we have some accounts.
@@ -215,7 +215,7 @@
 				}
 
 				if ($transactions) {
-					$this->updateTransactions($account, $historical, $historicalVerbose);
+					$this->updateTransactions($account, $historical, $historicalVerbose, $historicalLimit);
 				}
 
 				$this->accounts[] = $account;
@@ -368,8 +368,9 @@
 		 * @param $historicalVerbose (Default: false) Should verbose data be
 		 *                           collected for historical, or is a single-line
 		 *                           description ok?
+		 * @param $historicalLimit (Default: 0) How far back in time to go.
 		 */
-		public function updateTransactions($account, $historical = false, $historicalVerbose = true) {
+		public function updateTransactions($account, $historical = false, $historicalVerbose = true, $historicalLimit = 0) {
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
 			$page = $this->getPage('https://secure.halifax-online.co.uk' . $this->accountLinks[$accountKey]);
@@ -405,6 +406,7 @@
 					}
 					if (count($olderTransactions) == 0) { break; }
 					$transactions = array_merge($transactions, $olderTransactions);
+					if ($olderTransactions[count($olderTransactions) - 1]['date'] <= $historicalLimit) { break; }
 				}
 			}
 

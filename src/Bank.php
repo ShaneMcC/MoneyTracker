@@ -15,9 +15,10 @@
 		 * @param $historicalVerbose (Default: false) Should verbose data be
 		 *                           collected for historical, or is a single-line
 		 *                           description ok? (not applicable to all Banks)
+		 * @param $historicalLimit (Default: 0) How far back in time to go.
 		 * @return accounts associated with this login.
 		 */
-		abstract function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false);
+		abstract function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false, $historicalLimit = 0);
 
 		/**
 		 * Update the transactions on the given account object.
@@ -28,8 +29,9 @@
 		 * @param $historicalVerbose (Default: false) Should verbose data be
 		 *                           collected for historical, or is a single-line
 		 *                           description ok?
+		 * @param $historicalLimit (Default: 0) How far back in time to go.
 		 */
-		abstract function updateTransactions($account, $historical = false, $historicalVerbose = true);
+		abstract function updateTransactions($account, $historical = false, $historicalVerbose = true, $historicalLimit = 0);
 
 		protected function getPermDataName() { return $this->__toString(); }
 

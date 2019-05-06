@@ -5,7 +5,7 @@
 	require_once(dirname(__FILE__) . '/www/functions.php');
 	require_once(dirname(__FILE__) . '/www/classes/database.php');
 
-	$importer = new Importer($config['database'], $config['importdebug'], $config['forceHistorical']);
+	$importer = new Importer($config['database'], $config['importdebug'], $config['forceHistorical'], $config['historicalLimit']);
 
 	/**
 	 * Handler for object buffering.
@@ -31,6 +31,29 @@
 		$buffer = $__ob['buffer'];
 		$__ob['buffer'] = '';
 		return $buffer;
+	}
+
+	register_shutdown_function( "fatal_handler" );
+
+	function fatal_handler() {
+		$error = error_get_last();
+
+		if ($error !== NULL && $error['type'] === E_ERROR) {
+			$subject = '[MoneyTracker Cron] Error with import.';
+
+			$message = array();
+			$message[] = 'There was an Error with import, please see below: ';
+			$message[] = '';
+			$message[] = '= [Error] ==================================';
+			foreach (explode("\n", print_r($error, true)) as $l) { $message[] = $l; }
+			$message[] = '= [/Error] =================================';
+			$message[] = '';
+			$message[] = '= [Importer Output] ========================';
+			$message[] = $buffer;
+			$message[] = '= [/Importer Output] =======================';
+
+			mail($config['erroraddress']['to'], $subject, implode("\n", $message), 'From: ' . $config['erroraddress']['from']);
+		}
 	}
 
 	// =========================================================================

@@ -33,7 +33,7 @@
 		echo '</tr>';
 
 		$lastBalance = null;
-		$cutoff = strtotime("01 jan 2014");
+		$cutoff = isset($_REQUEST['date']) ? strtotime($_REQUEST['date']) : '';
 		foreach ($account->getTransactions() as $transaction) {
 
 			$unexpectedBalance = false;
@@ -42,7 +42,7 @@
 				$unexpectedBalance = (money_format('%.2n', $transaction->getBalance()) != money_format('%.2n', $newBalance));
 			}
 
-			// if ($transaction->getTime() < $cutoff) { continue; }
+			if (!empty($cutoff) && $transaction->getTime() < $cutoff) { continue; }
 
 			echo ($unexpectedBalance) ? '<tr style="border: 1px solid black; border-bottom: none; color: #F00">' : '<tr>';
 			echo '<td>', date("Y-m-d H:i:s", $transaction->getTime()), '</td>';

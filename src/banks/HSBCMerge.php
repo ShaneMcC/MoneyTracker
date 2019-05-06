@@ -59,8 +59,8 @@
 		}
 
 		/** {@inhertiDoc} */
-		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false) {
-			$mobileAccounts = $this->mobile->getAccounts($useCached, $transactions, $historical, $historicalVerbose);
+		public function getAccounts($useCached = true, $transactions = false, $historical = false, $historicalVerbose = false, $historicalLimit = 0) {
+			$mobileAccounts = $this->mobile->getAccounts($useCached, $transactions, $historical, $historicalVerbose, $historicalLimit);
 			$realAccounts = array();
 
 			foreach ($this->getDatabase()->getDB()->accounts->where('source', $this->__toString()) as $row) {
@@ -126,7 +126,7 @@
 		}
 
 		/** {@inhertiDoc} */
-		public function updateTransactions($account, $historical = false, $historicalVerbose = true) {
+		public function updateTransactions($account, $historical = false, $historicalVerbose = true, $historicalLimit = 0) {
 			// Details for mapping
 			$original = array('key' => $account->getAccountKey(), 'sortcode' => $account->getSortCode(), 'number' => $account->getAccountNumber());
 			$mapped = $this->accountMap[$original['key']];
@@ -136,7 +136,7 @@
 			$account->setSortCode($mapped['sortcode']);
 
 			// Update the transactions.
-			$this->mobile->updateTransactions($account, $historical, $historicalVerbose);
+			$this->mobile->updateTransactions($account, $historical, $historicalVerbose, $historicalLimit);
 
 			// Unmap the account.
 			$account->setAccountNumber($original['number']);
