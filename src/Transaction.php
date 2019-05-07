@@ -46,7 +46,7 @@
 			             'typecode' => $this->myTypeCode,
 			             'description' => $this->myDescription,
 			             'amount' => $this->myAmount,
-			             'balance' => $this->myBalance,
+			             'balance' => empty($this->myBalance) ? 0 : $this->myBalance,
 			             'extra' => json_encode($this->myExtra),
 			             'source' => $this->mySource);
 		}
