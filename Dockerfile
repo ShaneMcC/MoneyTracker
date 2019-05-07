@@ -6,7 +6,8 @@ RUN mkdir -p /usr/share/man/man1 /usr/share/man/man7 && \
     rm -Rfv /var/lib/apt/lists/* && \
     apt-get update && apt-get install -y git unzip libz-dev libglib2.0-dev patchelf libtidy-dev exim4 && \
     sed -i 's@local@internet@' /etc/exim4/update-exim4.conf.conf && \
-    update-exim4.conf
+    update-exim4.conf && \
+    echo 'sendmail_path = "/usr/sbin/sendmail -t"' > /usr/local/etc/php/conf.d/mail.ini
 
 COPY Docker/docker-php-v8/prebuild/app/v8-6.8.104.tar.gz /tmp/v8.tar.gz
 
