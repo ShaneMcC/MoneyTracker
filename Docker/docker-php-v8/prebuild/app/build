@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+cd /tmp
+fetch v8
+cd v8
+git checkout 6.8.104
+gclient sync
+tools/dev/v8gen.py -vv x64.release -- is_component_build=true
+ninja -C out.gn/x64.release/
+mkdir -p /tmp/out/lib /tmp/out/include
+cp out.gn/x64.release/lib*.so out.gn/x64.release/*_blob.bin out.gn/x64.release/icudtl.dat /tmp/out/lib/
+cp -R include/* /tmp/out/include/
+cd /tmp/out
+tar cfz /app/v8-6.8.104.tar.gz *
+cd
+rm -rf /tmp/*

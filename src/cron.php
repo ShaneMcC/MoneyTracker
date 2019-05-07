@@ -33,9 +33,8 @@
 		return $buffer;
 	}
 
-	register_shutdown_function( "fatal_handler" );
-
 	function fatal_handler() {
+		global $config;
 		$error = error_get_last();
 
 		if ($error !== NULL && $error['type'] === E_ERROR) {
@@ -55,6 +54,7 @@
 			mail($config['erroraddress']['to'], $subject, implode("\n", $message), 'From: ' . $config['erroraddress']['from']);
 		}
 	}
+	register_shutdown_function('fatal_handler');
 
 	// =========================================================================
 	// Importer

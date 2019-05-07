@@ -14,12 +14,12 @@
 	require_once(dirname(__FILE__) . '/banks/Monzo.php');
 
 	// Database info
-	$config['database']['type'] = 'mysql';
-	$config['database']['server'] = 'localhost';
-	$config['database']['port'] = '3306';
-	$config['database']['db'] = 'bankinfo';
-	$config['database']['user'] = 'bankinfo';
-	$config['database']['pass'] = 'bankinfo';
+	$config['database']['type'] = getEnvOrDefault('DB_TYPE', 'mysql');
+	$config['database']['server'] = getEnvOrDefault('DB_SERVER', 'localhost');
+	$config['database']['port'] = getEnvOrDefault('DB_PORT', '3306');
+	$config['database']['db'] = getEnvOrDefault('DB_DB', 'bankinfo');
+	$config['database']['user'] = getEnvOrDefault('DB_USER', 'bankinfo');
+	$config['database']['pass'] = getEnvOrDefault('DB_PASS', 'bankinfo');
 
 	// Base URL (Required by Monzo among other things.)
 	$config['baseurl'] = 'http://localhost/moneytracker/';

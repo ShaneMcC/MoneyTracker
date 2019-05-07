@@ -1,0 +1,5 @@
+#!/bin/bash
+set -e
+
+docker build . -t unamo/docker-php-v8-prebuild
+docker run --rm -v `pwd`/app:/app unamo/docker-php-v8-prebuild /app/build
