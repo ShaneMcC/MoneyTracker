@@ -95,8 +95,8 @@
 				}
 			}
 			// Fill out the login form and submit it.
-			$this->browser->setFieldById('login-uid', $this->account);
-			$page = $this->browser->submitFormById('login_uid_form');
+			$this->browser->setFieldById('OLB_UNIQUEID', $this->account);
+			$page = $this->browser->submitFormById('login-form-olb');
 			if (empty($page)) {
 				throw new ScraperException('Error getting TescoBank Login page.');
 			}
