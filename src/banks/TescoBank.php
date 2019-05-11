@@ -16,6 +16,7 @@
 
 		protected $accounts = null;
 		protected $accountLinks = array();
+		protected $accountData = array();
 		protected $tescoDNS = array('onlineservicing.creditcards.tescobank.com' => '',
 		                            'www.tescobank.com' => '',
 		                            'login.myproducts.tescobank.com' => '');
@@ -48,6 +49,7 @@
 		/** {@inheritDoc} */
 		protected function newBrowser($loadCookies = true) {
 			parent::newBrowser($loadCookies);
+			$this->browser->setMaximumRedirects(10); // TescoBank is redirect heavy.
 			$this->browser->setGetHostAddr(function ($host) { return $this->resolveTescoAddress($host); });
 		}
 
@@ -122,12 +124,18 @@
 			$this->browser->setFieldByName('AUTHTOKEN_PRESENT', (isset($this->permdata['otpdata']) ? 'true' : 'false'));
 			$this->browser->setFieldByName('ERROR_DETAILS', '');
 			$this->browser->setFieldByName('processreq', 'true');
-			$this->browser->setFieldByName('StateDataAttrNm', $document->find('input[name="StateDataAttrNm"]')->attr("value"));
 			$this->browser->setFieldByName('STORAGE_TYPE', 'Cookie');
 			$this->browser->setFieldByName('DIAGNOSTICS', 'Localstorage is supportedCookies are supported');
 
 			$page = $this->browser->submitFormById('AOTP_STATE');
 			$document = $this->getDocument($page);
+
+			// Set these again...
+			$this->browser->setFieldByName('AUTHTOKEN_PRESENT', (isset($this->permdata['otpdata']) ? 'true' : 'false'));
+			$this->browser->setFieldByName('ERROR_DETAILS', '');
+			$this->browser->setFieldByName('processreq', 'true');
+			$this->browser->setFieldByName('STORAGE_TYPE', 'Cookie');
+			$this->browser->setFieldByName('DIAGNOSTICS', 'Localstorage is supportedCookies are supported');
 
 			// Finally, let's actually tell them some login data.
 			$needed = $document->find('input[name^="DIGIT"]:not(:disabled)');
@@ -169,7 +177,7 @@
 					}
 				}
 
-				$page = $this->browser->clickSubmitById('NEXTBUTTON');
+				$page = $this->browser->clickSubmitById('NEXTBUTTON', ['SUBMIT' => 'NEXT']);
 				$document = $this->getDocument($page);
 
 				if (count($document->find('input#PASSWORD')) > 0) {
@@ -221,7 +229,6 @@
 
 			// Now progress the last bit.
 			$page = $this->browser->submitFormById('returnform');
-
 			$this->followFormRedirect($page);
 
 			// Never save cookies, tesco bank is flakey as fuck.
@@ -369,7 +376,8 @@ V8JS
 				$account->setBalance(0 - $balance); // "Balance" given is how much is owed
 
 				$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
-				$this->accountLinks[$accountKey] = 'https://myproducts.tescobank.com/api/credit-care?targetId=' . $item['productId'];
+				$this->accountLinks[$accountKey] = 'https://onlineservicing.creditcards.tescobank.com/Tesco_Consumer/OauthLoginHandler?tsysid=' . $item['productId'];
+				$this->accountData[$accountKey] = $item;
 
 				$account->setAvailable($item['creditCardDetails']['availableCredit']);
 
@@ -486,12 +494,31 @@ V8JS
 		public function updateTransactions($account, $historical = false, $historicalVerbose = true, $historicalLimit = 0) {
 			$account->clearTransactions();
 			$accountKey = preg_replace('#[^0-9]#', '', $account->getSortCode().$account->getAccountNumber());
-			$page = $this->getPage($this->accountLinks[$accountKey]);
-			$data = json_decode($page, true);
 
-			$oldHeaders = $this->browser->getAdditionalHeaders();
-			$page = $this->browser->post($data['data']['redirectUrl'], http_build_query(['SAMLResponse' => $data['data']['samlResponse']]), 'application/x-www-form-urlencoded');
-			$this->browser->setAdditionalHeaders($oldHeaders);
+			// In theory, we could get the data from here which would be nicer.
+			//
+			// - Need to calculate balance though.
+			//
+			// $pti = $this->accountData[$accountKey]['creditCardDetails']['productTokenId'];
+			// $json = $this->getPage('https://myproducts.tescobank.com/api/transactions?productTokenId=' . $pti);
+			// $transactions = json_decide($json, true);
+			//
+			// Next page would be
+			// $lmt = $transactions['metaData']['resultSet']['nextPageReference'];
+			// $json = $this->getPage('https://myproducts.tescobank.com/api/transactions?productTokenId=' . $pti . '&lmt=' . $lmt);
+			// $transactions = json_decide($json, true);
+			//
+			// Each transaction would be within $transactions['results']
+			//
+			// $desc = $t['shortName'] . ' // ' . $t['merchantLocation'];
+			// $amount = $t['transactionType'] == 'Purchase' ? 0 - $t['amount'] : $t['amount'];
+			// $date = $t['transactionDate'];
+			// $t['transactionReferenceNumber'] would be useful to have.
+			//
+			// Balance needs calculating back based on:
+			// $balance = $this->accountData[$accountKey]['creditCardDetails']['creditLimit'] - $this->accountData[$accountKey]['creditCardDetails']['availableCredit'];
+
+			$page = $this->getPage($this->accountLinks[$accountKey]);
 
 			if (!$this->isLoggedIn($page)) { return false; }
 

@@ -48,7 +48,7 @@ if [ "${SQLPROXY}" = "1" ]; then
 	ARGS="-e DB_SERVER=${DOCKERIP} -e DB_PORT=${DBPORT}"
 fi;
 
-docker run ${ARGS} -it -v $(pwd)/src:/moneytracker -h moneytracker.$(hostname -f) -p ${WEBPORT}:80 --rm moneytracker ${CMD}
+docker run ${ARGS} -v $(pwd)/src:/moneytracker -h moneytracker.$(hostname -f) -p ${WEBPORT}:80 --rm moneytracker ${CMD}
 
 if [ "${SQLPROXY}" = "1" ]; then
 	docker kill "redir-mt-${DBPORT}" >/dev/null 2>&1
