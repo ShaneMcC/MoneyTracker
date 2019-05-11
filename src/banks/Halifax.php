@@ -422,13 +422,13 @@
 			$dayCount = 0;
 			$lastDate = 0;
 
-			// Ignore transactions on the most-recent current date, as there may be more to come.
+			// Ignore transactions on the last date, as there may be more that we don't see
 			if (count($transactions) > 0) {
-				$firstDate = $transactions[count($transactions) -1 ]['date'];
+				$skipDate = $transactions[0]['date'];
 				foreach ($transactions as $transaction) {
-					// Skip the first day, cos we can't be sure we have all the
+					// Skip the last day, cos we can't be sure we have all the
 					// transactions for it.
-					// if ($transaction['date'] == $firstDate) { continue; }
+					if ($transaction['date'] == $skipDate) { continue; }
 
 					if ($lastDate == $transaction['date']) {
 						$dayCount++;
