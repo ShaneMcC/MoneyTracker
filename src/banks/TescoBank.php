@@ -108,11 +108,12 @@
 			$cookie = $this->browser->getCurrentCookieValue('ArcotAuthDid');
 			$deviceID = isset($this->permdata['deviceID']) ? $this->permdata['deviceID'] : '';
 
-			$this->browser->setFieldByName('MFP', '{"navigator":{"doNotTrack":"unspecified","oscpu":"Linux x86_64","vendor":"","vendorSub":"","productSub":"20100101","cookieEnabled":true,"buildID":"20150125221831","appCodeName":"Mozilla","appName":"Netscape","appVersion":"5.0 (X11)","platform":"Linux x86_64","userAgent":"Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:35.0) Gecko/20100101 Firefox/35.0","product":"Gecko","language":"en-US","onLine":true},"plugins":[],"screen":{"availHeight":1200,"availWidth":1920,"colorDepth":24,"height":1200,"pixelDepth":24,"width":1920},"extra":{"timezone":0,"sigVersion":"1.5"}}');
+			$this->browser->setFieldByName('MFP', '{"VERSION":"2.1","MFP":{"Browser":{"UserAgent":"Mozilla/5.0+(X11;+Ubuntu;+Linux+x86_64;+rv:68.0)+Gecko/20100101+Firefox/68.0","Vendor":"","VendorSubID":"","BuildID":"20181001000000","CookieEnabled":true},"IEPlugins":{},"NetscapePlugins":{"Shockwave+Flash":"32.0.0.223"},"Screen":{"FullHeight":1200,"AvlHeight":1200,"FullWidth":1920,"AvlWidth":1920,"ColorDepth":24,"PixelDepth":24},"System":{"Platform":"Linux+x86_64","OSCPU":"Linux+x86_64","systemLanguage":"en-US","Timezone":-60}},"ExternalIP":"","MESC":{"mesc":"mi=2;cd=150;id=30;mesc=289727;mesc=351831"},"Flash+Attributes":{}}');
 			$this->browser->setFieldByName('DeviceIDType', 'httpcookie');
 			$this->browser->setFieldByName('DeviceID', $cookie === false ? $deviceID : $cookie);
 			$this->browser->setFieldByName('processreq', 'true');
 			$this->browser->setFieldByName('StateDataAttrNm', $document->find('input[name="StateDataAttrNm"]')->attr("value"));
+
 			$page = $this->browser->submitFormByName('CollectMFPToEvaluate');
 			$document = $this->getDocument($page);
 
@@ -339,7 +340,7 @@ V8JS
 
 			$oldHeaders = $this->browser->getAdditionalHeaders();
 			$this->browser->addHeader("Content-type: application/json");
-			$page = $this->getPage('https://myproducts.tescobank.com/api/products');
+			$page = $this->getPage('https://myproducts.tescobank.com/my-profile/api/products');
 			$this->browser->setAdditionalHeaders($oldHeaders);
 
 			$accounts = array();
