@@ -102,6 +102,7 @@
 			if (empty($page)) {
 				throw new ScraperException('Error getting TescoBank Login page.');
 			}
+
 			$document = $this->getDocument($page);
 			// Dear tesco, fuck off...
 			// Tell them a bit about ourselves...
@@ -178,7 +179,7 @@
 					}
 				}
 
-				$page = $this->browser->clickSubmitById('NEXTBUTTON', ['SUBMIT' => 'NEXT']);
+				$page = $this->browser->submitFormById('inputForm', ['SUBMIT' => 'NEXT']);
 				$document = $this->getDocument($page);
 
 				if (count($document->find('input#PASSWORD')) > 0) {
@@ -217,6 +218,7 @@
 
 				$page = $this->browser->clickSubmitById('NEXTBUTTON');
 			}
+
 
 			// Save the DeviceID incase it changes.
 			preg_match('#var deviceID = ["\'](.*)["\']#', $page, $m);
