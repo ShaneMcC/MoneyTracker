@@ -56,6 +56,7 @@
 		$handle = fopen('php://stdin', 'r');
 		$line = fgets($handle);
 
+		echo 'Got: ', trim($line), "\n";
 		return trim($line);
 	}
 

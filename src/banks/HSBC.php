@@ -175,10 +175,14 @@
 			$securityDomain = parse_url($this->browser->getUrl());
 			$this->securityDomain = $securityDomain['host'];
 
-			if ($this->securekey == '##') {
+			if (startsWith($this->securekey, '#')) {
 				$this->browser->get('https://' . $this->securityDomain . '/gsa/IDV_CAM20_OTP_CHALLENGE/?__USER=withSecKey');
-				$this->securekey = getUserInput('Please enter the securekey code for '.$this->account.': ');
-				if ($this->securekey === false) {
+				if ($this->securekey == '##') {
+					$this->securekey = getUserInput('Please enter the securekey code for '.$this->account.': ');
+				} else {
+					$this->securekey = ltrim($this->securekey, '#');
+				}
+				if ($this->securekey === false || empty($this->securekey)) {
 					return false;
 				}
 
@@ -203,6 +207,7 @@
 				$this->browser->setFieldById('memorableAnswer', $this->secretword);
 				$this->browser->setFieldById('password', implode('', $digits));
 			}
+
 			// echo "Post-Login", "\n";
 			$page = $this->browser->clickSubmit('Continue');
 			while (preg_match('#document\.tempForm\.submit#Ums', $page)) {
