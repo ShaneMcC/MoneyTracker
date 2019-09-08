@@ -1,4 +1,4 @@
-FROM php:7.2-apache
+FROM php:7.3-apache
 
 MAINTAINER Shane Mc Cormack <dataforce@dataforce.org.uk>
 
@@ -9,7 +9,7 @@ RUN mkdir -p /usr/share/man/man1 /usr/share/man/man7 && \
     update-exim4.conf && \
     echo 'sendmail_path = "/usr/sbin/sendmail -t"' > /usr/local/etc/php/conf.d/mail.ini
 
-COPY Docker/docker-php-v8/prebuild/app/v8-6.8.104.tar.gz /tmp/v8.tar.gz
+COPY Docker/v8-7.5.288.tgz /tmp/v8.tar.gz
 
 RUN mkdir -p /opt/v8 && cd /opt/v8 && tar xvf /tmp/v8.tar.gz
 
@@ -18,7 +18,7 @@ RUN for A in /opt/v8/lib/*.so; do patchelf --set-rpath '$ORIGIN' $A; done
 RUN docker-php-source extract && \
     mkdir -p /tmp/pear && \
     cd /tmp/pear && \
-    pecl bundle v8js && \
+    pecl bundle v8js-2.1.1 && \
     cd v8js && \
     phpize . && \
     ./configure --with-v8js=/opt/v8 LDFLAGS="-lstdc++" && \
