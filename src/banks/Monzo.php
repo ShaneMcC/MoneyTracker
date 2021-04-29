@@ -43,7 +43,7 @@
 				$opts['http']['header'] = 'Authorization: Bearer ' . $this->permdata['authData']['access_token'];
 			}
 			$context  = stream_context_create($opts);
-			$result = @file_get_contents('https://api.monzo.com' . $method, false, $context);
+			$result = file_get_contents('https://api.monzo.com' . $method, false, $context);
 
 			return @json_decode($result, true);
 		}
@@ -93,7 +93,7 @@
 				// Request a new token, this requires user engagement...
 				$stateToken = bin2hex(openssl_random_pseudo_bytes(10));
 				$redirect_uri = $config['baseurl'] . 'monzo.php';
-				$clientURL = 'https://auth.getmondo.co.uk/?client_id=' . urlencode($this->clientid) . '&response_type=code&state=' . urlencode($stateToken) . '&redirect_uri=' . urlencode($redirect_uri);
+				$clientURL = 'https://auth.monzo.com/?client_id=' . urlencode($this->clientid) . '&response_type=code&state=' . urlencode($stateToken) . '&redirect_uri=' . urlencode($redirect_uri);
 
 				echo 'Please visit: ', $clientURL, "\n";
 				$authCode = getUserInput('Then enter the provided code: ');
