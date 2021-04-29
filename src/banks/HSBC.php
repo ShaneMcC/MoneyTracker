@@ -153,6 +153,7 @@
 			} else {
 				$this->newBrowser(false);
 			}
+
 			// echo "Pre-Home", "\n";
 			$page = $this->browser->get('https://www.hsbc.co.uk/');
 			$this->followFormRedirect($page);
@@ -334,7 +335,7 @@
 
 			// $page = $this->getPage('https://' . $this->saasDomain . '/1/3/personal/online-banking?BlitzToken=blitz');
 			$page = $this->getPage('https://www.hsbc.co.uk/1/3/personal/online-banking');
-			if (!$this->isLoggedIn($page)) { die('Unable to login'); return $this->accounts; }
+			if (!$this->isLoggedIn($page)) { return $this->accounts; }
 
 			if ($this->webVersion == HSBC::VER_NOV2016) {
 				$this->getAccounts_Nov2016($useCached, $transactions, $historical, $historicalVerbose, $historicalLimit);

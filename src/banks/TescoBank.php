@@ -286,6 +286,7 @@ V8JS
 		public function isLoggedIn($page) {
 			return (strpos($page, 'You\'re logged in to Online Banking') !== FALSE)
 			       || (strpos($page, '<a href="/Tesco_Consumer/ChooseServiceReqType.do">Manage your account</a>') !== FALSE)
+			       || (strpos($page, 'header__logout-button') !== FALSE)
 			       || (strpos($page, '<script>var __APP_STATE__=') !== FALSE)
 			       || (strpos($page, 'var __APP_PAYLOAD__=') !== FALSE);
 		}
@@ -337,7 +338,7 @@ V8JS
 					}
 				}
 			}
-			$page = $this->getPage('https://myproducts.tescobank.com/');
+			$page = $this->getPage('https://myproducts.tescobank.com/my-profile');
 			if (!$this->isLoggedIn($page)) { return $this->accounts; }
 
 			$oldHeaders = $this->browser->getAdditionalHeaders();

@@ -65,14 +65,15 @@
 		 */
 		protected function newBrowser($loadCookies = true) {
 			global $__simpleSocketContext;
-			$__simpleSocketContext = array();
+			$__simpleSocketContext = [];
 			$this->browser = new SimpleBrowser();
 			$this->browser->setParser(new SimplePHPPageBuilder());
-			$this->browser->setUserAgent('Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:35.0) Gecko/20100101 Firefox/35.0');
+			$this->browser->setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36');
 			if ($loadCookies) {
 				$this->loadCookies();
 			}
 			$this->browser->setGetHostAddr(function ($host) { return $this->cacheResolveAddress($host); });
+			$this->browser->setStreamContext($__simpleSocketContext);
 		}
 
 		/**
