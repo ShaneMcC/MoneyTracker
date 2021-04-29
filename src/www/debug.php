@@ -33,7 +33,7 @@
 		echo '</tr>';
 
 		$lastBalance = null;
-		$cutoff = isset($_REQUEST['date']) ? strtotime($_REQUEST['date']) : '';
+		$cutoff = isset($_REQUEST['date']) ? strtotime($_REQUEST['date']) : strtotime('-2 years');
 		foreach ($account->getTransactions() as $transaction) {
 
 			$unexpectedBalance = false;
