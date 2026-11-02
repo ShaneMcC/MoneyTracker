@@ -1,3 +1,12 @@
+> [!CAUTION]
+> This repo is no longer actively maintained
+>
+> I stopped using this a long time ago when it became too annoying to keep up with changes to the bank web pages and sign on processes, especially as they moved towards forced 2FA (a good thing) via dedicated apps etc.
+>
+> I had hoped PSD2 would have made things nicer, but that became very B2B not really Bank-to-Consumer and never materialised quite as I was hoping for.
+>
+> These days I mostly just use [YNAB](https://www.ynab.com/) which is "good enough" for what I want.
+
 Overview
 ==========
 
@@ -41,7 +50,7 @@ Monzo requires some configuration on the monzo developer portal to get going, as
 
 Go here: https://developers.monzo.com/api/playground
 Authorize Monzo.
-Then go to https://developers.monzo.com/apps/home and create a new confidential OAuth Client 
+Then go to https://developers.monzo.com/apps/home and create a new confidential OAuth Client
 Make a note of: Client ID, Client Secret
 
 Make sure that Redirect URLs is set to the same as `$config['baseurl'] . 'monzo.php'` (eg: `http://localhost/moneytracker/monzo.php`) or the redirect won't work.
@@ -126,4 +135,4 @@ Contributions are accepted by pull request.
 
 New Banks will be accepted after code review, but will be marked as UNTESTED.
 
-Changes to the webapp will be tested more thoroughly before acceptance. 
+Changes to the webapp will be tested more thoroughly before acceptance.
